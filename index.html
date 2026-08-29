@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alma Raíz - Gestor Holístico CRM</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,400&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #684128;        /* Tono raíz / tierra noble */
+            --primary-dark: #4d2f1c;
+            --primary-light: #f7efe7;
+            --accent-gold: #c6934b;    /* Tono dorado sagrado */
+            --accent-green: #597d62;   /* Verde sanación / reiki */
+            --accent-rose: #d48c80;    /* Flor de loto */
+            --bg: #faf6f0;             /* Fondo crema suave */
+            --card-bg: #ffffff;
+            --text-main: #362d29;
+            --text-muted: #796b63;
+            --border: #e8ded4;
+            --shadow: 0 8px 24px rgba(104, 65, 40, 0.08);
+            --radius: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 24px 16px 60px;
+        }
+
+        .container {
+            max-width: 1050px;
+            margin: 0 auto;
+        }
+
+        /* HEADER BRANDING */
+        header {
+            text-align: center;
+            margin-bottom: 28px;
+            padding: 20px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(247,239,231,0.7) 100%);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .logo-container {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 12px;
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(198, 147, 75, 0.25);
+            border: 3px solid var(--accent-gold);
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        h1.brand-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .brand-subtitle {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent-gold);
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .brand-motto {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* STATS COUNTERS */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            padding: 16px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+            border-left: 4px solid var(--accent-gold);
+        }
+
+        .stat-card.green { border-left-color: var(--accent-green); }
+        .stat-card.rose { border-left-color: var(--accent-rose); }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            font-family: 'Cormorant Garamond', serif;
+        }
+
+        .stat-label {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 600;
+        }
+
+        /* TABS NAVIGATION */
+        .nav-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 22px;
+            flex-wrap: wrap;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-weight: 600;
+            padding: 10px 18px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tab-btn:hover {
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: #ffffff;
+            box-shadow: 0 4px 10px rgba(104, 65, 40, 0.25);
+        }
+
+        /* TAB PANELS */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* CARDS & LAYOUT */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.6rem;
+            color: var(--primary);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* FORMS */
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 11px 14px;
+            margin-bottom: 15px;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.92rem;
+            font-family: 'Montserrat', sans-serif;
+            color: var(--text-main);
+            background-color: #fff;
+            transition: all 0.2s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 0 3px rgba(198, 147, 75, 0.15);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        @media (max-width: 550px) {
+            .form-row { grid-template-columns: 1fr; }
+        }
+
+        /* BUTTONS */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 11px 20px;
+            border-radius: 8px;
+            font-size: 0.92rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            border: none;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: #ffffff;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            box-shadow: 0 4px 12px rgba(104, 65, 40, 0.25);
+        }
+
+        .btn-gold {
+            background-color: var(--accent-gold);
+            color: #ffffff;
+        }
+
+        .btn-gold:hover {
+            background-color: #b0813f;
+        }
+
+        .btn-green {
+            background-color: var(--accent-green);
+            color: #ffffff;
+        }
+
+        .btn-green:hover {
+            background-color: #4a6a52;
+        }
+
+        .btn-whatsapp {
+            background-color: #25D366;
+            color: white;
+            font-size: 0.8rem;
+            padding: 6px 12px;
+            border-radius: 6px;
+        }
+
+        .btn-whatsapp:hover {
+            background-color: #1ebd56;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1.5px solid var(--border);
+            color: var(--text-main);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            border-radius: 6px;
+        }
+
+        .btn-danger {
+            background-color: #d9534f;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #c9302c;
+        }
+
+        /* NOTIFICATION BANNER */
+        #notificacion {
+            display: none;
+            padding: 14px 20px;
+            background-color: var(--accent-green);
+            color: white;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(89, 125, 98, 0.25);
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* SEARCH & FILTER BAR */
+        .filter-box {
+            background: var(--primary-light);
+            padding: 16px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            align-items: end;
+        }
+
+        .filter-grid .form-group {
+            margin-bottom: 0;
+        }
+
+        .filter-grid input, .filter-grid select {
+            margin-bottom: 0;
+            background: #fff;
+        }
+
+        /* HISTORY & CARDS LIST */
+        .session-card {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-left: 5px solid var(--primary);
+            border-radius: 10px;
+            padding: 18px;
+            margin-bottom: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            transition: all 0.2s ease;
+        }
+
+        .session-card:hover {
+            box-shadow: 0 6px 16px rgba(104, 65, 40, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .session-card.avance { border-left-color: var(--accent-green); }
+        .session-card.estable { border-left-color: var(--accent-gold); }
+        .session-card.retroceso { border-left-color: var(--accent-rose); }
+
+        .session-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .session-client-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary);
+            font-family: 'Cormorant Garamond', serif;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-avance { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+        .badge-estable { background: #fff8e1; color: #f57f17; border: 1px solid #ffecb3; }
+        .badge-retroceso { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+
+        .session-body {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: var(--text-main);
+            margin-bottom: 12px;
+            background: #faf8f5;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .session-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            flex-wrap: wrap;
+            gap: 8px;
+            border-top: 1px dashed var(--border);
+            padding-top: 10px;
+        }
+
+        /* CLIENT DIRECTORY TABLE */
+        .client-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .client-table th {
+            background: var(--primary-light);
+            color: var(--primary);
+            font-weight: 600;
+            text-align: left;
+            padding: 12px 14px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .client-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+
+        .client-table tr:hover {
+            background-color: #faf7f2;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        /* BACKUP SECTION */
+        .export-box {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-top: 15px;
+        }
+
+        .export-card {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            background: #faf8f5;
+        }
+
+        .export-card h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .export-card p {
+            font-size: 0.83rem;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state span {
+            font-size: 2.5rem;
+            display: block;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- CABECERA CON IDENTIDAD ALMA RAÍZ -->
+    <header>
+        <div class="logo-container">
+            <img src="logo-almaraiz.jpg" alt="Logo Alma Raíz" onerror="this.src='Logo.jpg';">
+        </div>
+        <h1 class="brand-title">Alma Raíz</h1>
+        <div class="brand-subtitle">SESIONES DE REIKI &bull; TERAPIAS HOLÍSTICAS</div>
+        <div class="brand-motto">Energía &bull; Equilibrio &bull; Sanación</div>
+    </header>
+
+    <!-- NOTIFICACIÓN DE ÉXITO -->
+    <div id="notificacion">✨ Acción realizada con éxito</div>
+
+    <!-- BARRA DE ESTADÍSTICAS RÁPIDAS -->
+    <div class="stats-bar">
+        <div class="stat-card">
+            <div class="stat-value" id="totalClientesStat">0</div>
+            <div class="stat-label">Consultantes Registrados</div>
+        </div>
+        <div class="stat-card green">
+            <div class="stat-value" id="totalSesionesStat">0</div>
+            <div class="stat-label">Sesiones Brindadas</div>
+        </div>
+        <div class="stat-card rose">
+            <div class="stat-value" id="proximasCitasStat">0</div>
+            <div class="stat-label">Próximas Citas Agendadas</div>
+        </div>
+    </div>
+
+    <!-- PESTAÑAS DE NAVEGACIÓN -->
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="cambiarPestana('registro')">✍️ Registro Rápido</button>
+        <button class="tab-btn" onclick="cambiarPestana('historial')">🔍 Historial &amp; Filtros</button>
+        <button class="tab-btn" onclick="cambiarPestana('clientes')">👥 Directorio de Clientes</button>
+        <button class="tab-btn" onclick="cambiarPestana('agenda')">📅 Próximas Citas</button>
+        <button class="tab-btn" onclick="cambiarPestana('exportar')">💾 Exportar / Respaldo</button>
+    </div>
+
+    <!-- ================= PESTAÑA 1: REGISTRO RÁPIDO ================= -->
+    <div id="tab-registro" class="tab-content active">
+        <div class="grid-2">
+            <!-- Registrar Cliente -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>🌱 Nuevo Consultante</h2>
+                </div>
+                <form id="formCliente">
+                    <label for="nombre">Nombre Completo *</label>
+                    <input type="text" id="nombre" required placeholder="Ej. Laura Pérez">
+                    
+                    <div class="form-row">
+                        <div>
+                            <label for="telefono">WhatsApp / Teléfono</label>
+                            <input type="tel" id="telefono" placeholder="Ej. +5491123456789">
+                        </div>
+                        <div>
+                            <label for="email">Correo Electrónico</label>
+                            <input type="email" id="email" placeholder="laura@email.com">
+                        </div>
+                    </div>
+
+                    <label for="motivoConsulta">Motivo Inicial / Intención</label>
+                    <textarea id="motivoConsulta" rows="2" placeholder="Ej. Ansiedad, búsqueda de alineación energética, insomnio..."></textarea>
+                    
+                    <button type="submit" class="btn btn-primary">Guardar Consultante</button>
+                </form>
+            </div>
+
+            <!-- Registrar Sesión -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>✨ Registrar Sesión</h2>
+                </div>
+                <form id="formSesion">
+                    <label for="selectCliente">Seleccionar Consultante *</label>
+                    <select id="selectCliente" required>
+                        <option value="">-- Elige un consultante --</option>
+                    </select>
+
+                    <div class="form-row">
+                        <div>
+                            <label for="tipoTerapia">Tipo de Sesión</label>
+                            <select id="tipoTerapia">
+                                <option value="Reiki Usui">Reiki Usui</option>
+                                <option value="Alineación de Chakras">Alineación de Chakras</option>
+                                <option value="Reiki a Distancia">Reiki a Distancia</option>
+                                <option value="Sanación Energética Integral">Sanación Energética Integral</option>
+                                <option value="Armonización con Péndulo">Armonización con Péndulo</option>
+                                <option value="Otra Terapia">Otra Terapia</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="evolucion">Evolución Energética *</label>
+                            <select id="evolucion" required>
+                                <option value="Avance">📈 Avance (Alivio, equilibrio)</option>
+                                <option value="Estable">➖ Estable (En proceso)</option>
+                                <option value="Retroceso">📉 Resistencia / Desequilibrio</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <label for="temas">Temas Tratados / Diagnóstico Energético *</label>
+                    <textarea id="temas" rows="3" required placeholder="Ej. Bloqueo en chakra plexo solar y garganta. Se trabajó respiración consciente y corte de lazos. Sensación de paz al finalizar."></textarea>
+                    
+                    <label for="fechaProxima">Próxima Sesión / Cita Agendada</label>
+                    <input type="datetime-local" id="fechaProxima">
+                    
+                    <button type="submit" class="btn btn-primary">Registrar Sesión</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= PESTAÑA 2: HISTORIAL Y FILTROS ================= -->
+    <div id="tab-historial" class="tab-content">
+        <div class="card">
+            <div class="card-header">
+                <h2>📜 Historial de Sesiones &amp; Filtros</h2>
+                <button class="btn btn-outline btn-sm" onclick="limpiarFiltrosHistorial()">Restablecer Filtros</button>
+            </div>
+
+            <!-- Caja de Búsqueda y Filtros -->
+            <div class="filter-box">
+                <div class="filter-grid">
+                    <div class="form-group">
+                        <label for="filtroCliente">Consultante</label>
+                        <select id="filtroCliente" onchange="aplicarFiltrosHistorial()">
+                            <option value="">-- Todos los consultantes --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="filtroEvolucion">Evolución</label>
+                        <select id="filtroEvolucion" onchange="aplicarFiltrosHistorial()">
+                            <option value="">-- Todas --</option>
+                            <option value="Avance">📈 Avance</option>
+                            <option value="Estable">➖ Estable</option>
+                            <option value="Retroceso">📉 Resistencia</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="filtroTexto">Buscar palabra clave</label>
+                        <input type="text" id="filtroTexto" placeholder="Ej. plexo solar, paz, chakra..." oninput="aplicarFiltrosHistorial()">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="filtroFechaDesde">Desde fecha</label>
+                        <input type="date" id="filtroFechaDesde" onchange="aplicarFiltrosHistorial()">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="filtroFechaHasta">Hasta fecha</label>
+                        <input type="date" id="filtroFechaHasta" onchange="aplicarFiltrosHistorial()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Listado de Sesiones Filtradas -->
+            <div id="contenedorHistorial"></div>
+        </div>
+    </div>
+
+    <!-- ================= PESTAÑA 3: DIRECTORIO DE CLIENTES ================= -->
+    <div id="tab-clientes" class="tab-content">
+        <div class="card">
+            <div class="card-header">
+                <h2>👥 Directorio de Consultantes</h2>
+                <div style="width: 250px;"><input type="text" id="buscadorDirectorio" placeholder="🔍 Buscar por nombre o teléfono..." style="margin-bottom:0;" oninput="renderizarDirectorio()"></div>
+            </div>
+
+            <div style="overflow-x: auto;">
+                <table class="client-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Contacto</th>
+                            <th>Motivo / Intención</th>
+                            <th>Sesiones</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaClientesBody">
+                    </tbody>
+                </table>
+            </div>
+            <div id="vacioClientes" class="empty-state" style="display: none;">
+                <span>🌱</span>
+                <p>No hay consultantes registrados aún o no coinciden con la búsqueda.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= PESTAÑA 4: AGENDA DE PRÓXIMAS CITAS ================= -->
+    <div id="tab-agenda" class="tab-content">
+        <div class="card">
+            <div class="card-header">
+                <h2>📅 Próximas Citas y Recordatorios</h2>
+            </div>
+            <div id="contenedorAgenda"></div>
+        </div>
+    </div>
+
+    <!-- ================= PESTAÑA 5: EXPORTAR Y BACKUP ================= -->
+    <div id="tab-exportar" class="tab-content">
+        <div class="card">
+            <div class="card-header">
+                <h2>💾 Exportación de Datos y Copia de Seguridad</h2>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">
+                Descarga tu base de datos en formato <strong>CSV</strong> (compatible con Excel y Google Sheets) o genera un respaldo completo en <strong>JSON</strong> para resguardar tu información de forma segura.
+            </p>
+
+            <div class="export-box">
+                <div class="export-card">
+                    <h3>📊 Clientes (CSV)</h3>
+                    <p>Lista completa de consultantes con sus datos de contacto y motivos.</p>
+                    <button class="btn btn-gold btn-sm" onclick="exportarClientesCSV()">Descargar Clientes CSV</button>
+                </div>
+
+                <div class="export-card">
+                    <h3>📜 Sesiones (CSV)</h3>
+                    <p>Registro histórico detallado de todas las sesiones de Reiki y terapias.</p>
+                    <button class="btn btn-gold btn-sm" onclick="exportarSesionesCSV()">Descargar Sesiones CSV</button>
+                </div>
+
+                <div class="export-card">
+                    <h3>📂 Respaldo Total (JSON)</h3>
+                    <p>Copia completa de seguridad de clientes y sesiones lista para restaurar.</p>
+                    <button class="btn btn-primary btn-sm" onclick="exportarBackupJSON()">Exportar Respaldo JSON</button>
+                </div>
+
+                <div class="export-card">
+                    <h3>📥 Restaurar Respaldo</h3>
+                    <p>Cargar un archivo JSON de respaldo previo en esta aplicación.</p>
+                    <input type="file" id="archivoBackup" accept=".json" style="display:none" onchange="importarBackupJSON(event)">
+                    <button class="btn btn-outline btn-sm" onclick="document.getElementById('archivoBackup').click()">Subir Archivo JSON</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // --- CAPA DE DATOS CON LOCALSTORAGE ---
+    class AlmaRaizDB {
+        constructor() {
+            this.dbKey = 'almaraiz_crm_data';
+            this.legacyKey = 'holistic_crm_data';
+            this.iniciarDB();
+        }
+
+        iniciarDB() {
+            if (!localStorage.getItem(this.dbKey)) {
+                if (localStorage.getItem(this.legacyKey)) {
+                    const legacy = JSON.parse(localStorage.getItem(this.legacyKey));
+                    localStorage.setItem(this.dbKey, JSON.stringify(legacy));
+                } else {
+                    localStorage.setItem(this.dbKey, JSON.stringify({ clientes: [], sesiones: [] }));
+                }
+            }
+        }
+
+        _leer() {
+            try {
+                return JSON.parse(localStorage.getItem(this.dbKey)) || { clientes: [], sesiones: [] };
+            } catch (e) {
+                return { clientes: [], sesiones: [] };
+            }
+        }
+
+        _guardar(datos) {
+            localStorage.setItem(this.dbKey, JSON.stringify(datos));
+            actualizarContadores();
+        }
+
+        // CLIENTES
+        agregarCliente(nombre, telefono, email, motivoConsulta) {
+            const datos = this._leer();
+            const nuevoCliente = {
+                id: Date.now().toString(),
+                nombre: nombre.trim(),
+                telefono: telefono ? telefono.trim() : '',
+                email: email ? email.trim() : '',
+                motivoConsulta: motivoConsulta ? motivoConsulta.trim() : '',
+                fechaRegistro: new Date().toISOString()
+            };
+            datos.clientes.push(nuevoCliente);
+            this._guardar(datos);
+            return nuevoCliente;
+        }
+
+        eliminarCliente(clienteId) {
+            const datos = this._leer();
+            datos.clientes = datos.clientes.filter(c => c.id !== clienteId);
+            datos.sesiones = datos.sesiones.filter(s => s.clienteId !== clienteId);
+            this._guardar(datos);
+        }
+
+        obtenerClientes() {
+            return this._leer().clientes.sort((a,b) => a.nombre.localeCompare(b.nombre));
+        }
+
+        obtenerClientePorId(id) {
+            return this._leer().clientes.find(c => c.id === id);
+        }
+
+        // SESIONES
+        registrarSesion(clienteId, tipoTerapia, temasTratados, evolucion, fechaProxima) {
+            const datos = this._leer();
+            const cliente = this.obtenerClientePorId(clienteId);
+            const nuevaSesion = {
+                id: Date.now().toString(),
+                clienteId,
+                clienteNombre: cliente ? cliente.nombre : 'Consultante',
+                tipoTerapia: tipoTerapia || 'Reiki Usui',
+                fechaSesion: new Date().toISOString(),
+                temasTratados: temasTratados.trim(),
+                evolucion,
+                fechaProxima: fechaProxima || null
+            };
+            datos.sesiones.push(nuevaSesion);
+            this._guardar(datos);
+            return nuevaSesion;
+        }
+
+        eliminarSesion(sesionId) {
+            const datos = this._leer();
+            datos.sesiones = datos.sesiones.filter(s => s.id !== sesionId);
+            this._guardar(datos);
+        }
+
+        obtenerSesiones() {
+            return this._leer().sesiones.sort((a,b) => new Date(b.fechaSesion) - new Date(a.fechaSesion));
+        }
+
+        obtenerSesionesPorCliente(clienteId) {
+            return this.obtenerSesiones().filter(s => s.clienteId === clienteId);
+        }
+    }
+
+    // --- INSTANCIA Y ELEMENTOS ---
+    const db = new AlmaRaizDB();
+    const notificacion = document.getElementById('notificacion');
+
+    function cambiarPestana(tabName) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+        const targetBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabName));
+        if (targetBtn) targetBtn.classList.add('active');
+
+        const targetTab = document.getElementById(`tab-${tabName}`);
+        if (targetTab) {
+            targetTab.classList.add('active');
+            if (tabName === 'historial') aplicarFiltrosHistorial();
+            if (tabName === 'clientes') renderizarDirectorio();
+            if (tabName === 'agenda') renderizarAgenda();
+        }
+    }
+
+    function mostrarNotificacion(msg) {
+        notificacion.textContent = msg;
+        notificacion.style.display = 'block';
+        setTimeout(() => notificacion.style.display = 'none', 3500);
+    }
+
+    function actualizarSelects() {
+        const clientes = db.obtenerClientes();
+        const selectCliente = document.getElementById('selectCliente');
+        const filtroCliente = document.getElementById('filtroCliente');
+
+        const opciones = '<option value="">-- Elige un consultante --</option>' + 
+            clientes.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
+
+        const opcionesFiltro = '<option value="">-- Todos los consultantes --</option>' + 
+            clientes.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
+
+        selectCliente.innerHTML = opciones;
+        filtroCliente.innerHTML = opcionesFiltro;
+    }
+
+    function actualizarContadores() {
+        const clientes = db.obtenerClientes();
+        const sesiones = db.obtenerSesiones();
+        const ahora = new Date();
+        const proximas = sesiones.filter(s => s.fechaProxima && new Date(s.fechaProxima) >= ahora);
+
+        document.getElementById('totalClientesStat').textContent = clientes.length;
+        document.getElementById('totalSesionesStat').textContent = sesiones.length;
+        document.getElementById('proximasCitasStat').textContent = proximas.length;
+    }
+
+    // FORMULARIO CLIENTE
+    document.getElementById('formCliente').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const nombre = document.getElementById('nombre').value;
+        const telefono = document.getElementById('telefono').value;
+        const email = document.getElementById('email').value;
+        const motivo = document.getElementById('motivoConsulta').value;
+
+        db.agregarCliente(nombre, telefono, email, motivo);
+        mostrarNotificacion(`🌸 Consultante "${nombre}" guardado con éxito.`);
+        document.getElementById('formCliente').reset();
+        actualizarSelects();
+    });
+
+    // FORMULARIO SESIÓN
+    document.getElementById('formSesion').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const clienteId = document.getElementById('selectCliente').value;
+        const tipoTerapia = document.getElementById('tipoTerapia').value;
+        const temas = document.getElementById('temas').value;
+        const evolucion = document.getElementById('evolucion').value;
+        const fechaProxima = document.getElementById('fechaProxima').value;
+
+        db.registrarSesion(clienteId, tipoTerapia, temas, evolucion, fechaProxima);
+        mostrarNotificacion(`✨ Sesión de Reiki registrada con éxito.`);
+        document.getElementById('formSesion').reset();
+    });
+
+    // FILTROS & HISTORIAL
+    function aplicarFiltrosHistorial() {
+        const clienteId = document.getElementById('filtroCliente').value;
+        const evolucion = document.getElementById('filtroEvolucion').value;
+        const texto = document.getElementById('filtroTexto').value.toLowerCase().trim();
+        const desde = document.getElementById('filtroFechaDesde').value;
+        const hasta = document.getElementById('filtroFechaHasta').value;
+
+        let sesiones = db.obtenerSesiones();
+
+        if (clienteId) {
+            sesiones = sesiones.filter(s => s.clienteId === clienteId);
+        }
+        if (evolucion) {
+            sesiones = sesiones.filter(s => s.evolucion === evolucion);
+        }
+        if (texto) {
+            sesiones = sesiones.filter(s => 
+                (s.temasTratados && s.temasTratados.toLowerCase().includes(texto)) ||
+                (s.tipoTerapia && s.tipoTerapia.toLowerCase().includes(texto)) ||
+                (s.clienteNombre && s.clienteNombre.toLowerCase().includes(texto))
+            );
+        }
+        if (desde) {
+            const d = new Date(desde);
+            sesiones = sesiones.filter(s => new Date(s.fechaSesion) >= d);
+        }
+        if (hasta) {
+            const h = new Date(hasta);
+            h.setHours(23, 59, 59, 999);
+            sesiones = sesiones.filter(s => new Date(s.fechaSesion) <= h);
+        }
+
+        const contenedor = document.getElementById('contenedorHistorial');
+        if (sesiones.length === 0) {
+            contenedor.innerHTML = `
+                <div class="empty-state">
+                    <span>🔍</span>
+                    <p>No se encontraron sesiones con los filtros seleccionados.</p>
+                </div>
+            `;
+            return;
+        }
+
+        contenedor.innerHTML = sesiones.map(s => {
+            const cliente = db.obtenerClientePorId(s.clienteId);
+            const badgeClass = s.evolucion === 'Avance' ? 'badge-avance' : (s.evolucion === 'Estable' ? 'badge-estable' : 'badge-retroceso');
+            const cardClass = s.evolucion.toLowerCase();
+            const fechaStr = new Date(s.fechaSesion).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            const proximaStr = s.fechaProxima ? new Date(s.fechaProxima).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' }) : 'No agendada';
+
+            return `
+                <div class="session-card ${cardClass}">
+                    <div class="session-header">
+                        <div>
+                            <span class="session-client-name">${s.clienteNombre}</span>
+                            <span style="font-size:0.8rem; color:var(--text-muted); margin-left:8px;">• ${s.tipoTerapia}</span>
+                        </div>
+                        <span class="badge ${badgeClass}">${s.evolucion}</span>
+                    </div>
+
+                    <div class="session-body">
+                        <strong>🌿 Temas & Observaciones:</strong><br>
+                        ${s.temasTratados.replace(/\n/g, '<br>')}
+                    </div>
+
+                    <div class="session-footer">
+                        <div>
+                            <span>📅 Sesión: <strong>${fechaStr}</strong></span> | 
+                            <span>🕊️ Próxima cita: <strong>${proximaStr}</strong></span>
+                        </div>
+                        <div style="display:flex; gap:6px;">
+                            ${cliente && cliente.telefono ? `
+                                <a class="btn btn-whatsapp btn-sm" target="_blank" href="https://wa.me/${cliente.telefono.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hola ${cliente.nombre}! Te escribo de Alma Raíz. Te recuerdo que tu próxima sesión de Reiki quedó agendada para el ${proximaStr}. Te esperamos con mucho amor! 🌿✨`)}">
+                                    💬 Enviar WhatsApp
+                                </a>
+                            ` : ''}
+                            <button class="btn btn-danger btn-sm" onclick="borrarSesion('${s.id}')">🗑️</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function limpiarFiltrosHistorial() {
+        document.getElementById('filtroCliente').value = '';
+        document.getElementById('filtroEvolucion').value = '';
+        document.getElementById('filtroTexto').value = '';
+        document.getElementById('filtroFechaDesde').value = '';
+        document.getElementById('filtroFechaHasta').value = '';
+        aplicarFiltrosHistorial();
+    }
+
+    function borrarSesion(id) {
+        if (confirm('¿Estás segura de eliminar este registro de sesión?')) {
+            db.eliminarSesion(id);
+            mostrarNotificacion('Registro de sesión eliminado.');
+            aplicarFiltrosHistorial();
+        }
+    }
+
+    // DIRECTORIO DE CLIENTES
+    function renderizarDirectorio() {
+        const query = document.getElementById('buscadorDirectorio').value.toLowerCase().trim();
+        let clientes = db.obtenerClientes();
+
+        if (query) {
+            clientes = clientes.filter(c => 
+                c.nombre.toLowerCase().includes(query) || 
+                c.telefono.includes(query) || 
+                c.email.toLowerCase().includes(query)
+            );
+        }
+
+        const tbody = document.getElementById('tablaClientesBody');
+        const empty = document.getElementById('vacioClientes');
+
+        if (clientes.length === 0) {
+            tbody.innerHTML = '';
+            empty.style.display = 'block';
+            return;
+        }
+
+        empty.style.display = 'none';
+        tbody.innerHTML = clientes.map(c => {
+            const cantSesiones = db.obtenerSesionesPorCliente(c.id).length;
+            return `
+                <tr>
+                    <td><strong>${c.nombre}</strong></td>
+                    <td>
+                        ${c.telefono ? `<div>📱 ${c.telefono}</div>` : ''}
+                        ${c.email ? `<div>✉️ ${c.email}</div>` : ''}
+                        ${!c.telefono && !c.email ? '<span style="color:var(--text-muted); font-size:0.8rem;">Sin contacto</span>' : ''}
+                    </td>
+                    <td style="font-size:0.85rem; color:var(--text-muted); max-width:220px;">
+                        ${c.motivoConsulta || '<em>Sin motivo registrado</em>'}
+                    </td>
+                    <td>
+                        <span class="badge" style="background:#e8ded4; color:var(--primary); font-size:0.8rem;">
+                            ${cantSesiones} ${cantSesiones === 1 ? 'sesión' : 'sesiones'}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="table-actions">
+                            ${c.telefono ? `
+                                <a class="btn btn-whatsapp btn-sm" target="_blank" href="https://wa.me/${c.telefono.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hola ${c.nombre}! Te escribo desde Alma Raíz ✨`)}">
+                                    WhatsApp
+                                </a>
+                            ` : ''}
+                            <button class="btn btn-outline btn-sm" onclick="verHistorialDe('${c.id}')">Ver Historial</button>
+                            <button class="btn btn-danger btn-sm" onclick="borrarCliente('${c.id}', '${c.nombre}')">🗑️</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function verHistorialDe(clienteId) {
+        cambiarPestana('historial');
+        document.getElementById('filtroCliente').value = clienteId;
+        aplicarFiltrosHistorial();
+    }
+
+    function borrarCliente(id, nombre) {
+        if (confirm(`¿Segura que deseas eliminar a "${nombre}" y todo su historial de sesiones?`)) {
+            db.eliminarCliente(id);
+            mostrarNotificacion(`Consultante "${nombre}" eliminado.`);
+            actualizarSelects();
+            renderizarDirectorio();
+        }
+    }
+
+    // PRÓXIMAS CITAS & AGENDA
+    function renderizarAgenda() {
+        const sesiones = db.obtenerSesiones();
+        const ahora = new Date();
+        const citasFuturas = sesiones
+            .filter(s => s.fechaProxima && new Date(s.fechaProxima) >= ahora)
+            .sort((a,b) => new Date(a.fechaProxima) - new Date(b.fechaProxima));
+
+        const cont = document.getElementById('contenedorAgenda');
+        if (citasFuturas.length === 0) {
+            cont.innerHTML = `
+                <div class="empty-state">
+                    <span>🕊️</span>
+                    <p>No hay próximas citas agendadas por el momento.</p>
+                </div>
+            `;
+            return;
+        }
+
+        cont.innerHTML = citasFuturas.map(s => {
+            const cliente = db.obtenerClientePorId(s.clienteId);
+            const fechaCita = new Date(s.fechaProxima).toLocaleString('es-ES', { 
+                weekday: 'long', 
+                day: '2-digit', 
+                month: 'long', 
+                year: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+
+            return `
+                <div class="session-card avance" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                    <div>
+                        <div class="session-client-name">${s.clienteNombre}</div>
+                        <div style="color:var(--primary); font-weight:600; font-size:0.95rem; margin: 4px 0;">
+                            ⏰ ${fechaCita}
+                        </div>
+                        <div style="font-size:0.82rem; color:var(--text-muted);">
+                            Terapia: ${s.tipoTerapia}
+                        </div>
+                    </div>
+                    <div>
+                        ${cliente && cliente.telefono ? `
+                            <a class="btn btn-whatsapp" target="_blank" href="https://wa.me/${cliente.telefono.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hola ${cliente.nombre}! Te recordamos tu cita de Reiki en Alma Raíz para el día ${fechaCita}. Que tengas un día en mucha paz! 🌸`)}">
+                                💬 Enviar Recordatorio
+                            </a>
+                        ` : '<span style="font-size:0.8rem; color:var(--text-muted);">Sin WhatsApp</span>'}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // EXPORTACIÓN A CSV Y BACKUP JSON
+    function descargarArchivo(contenido, nombreArchivo, tipoMime) {
+        const blob = new Blob([contenido], { type: tipoMime });
+        const enlace = document.createElement('a');
+        enlace.href = URL.createObjectURL(blob);
+        enlace.download = nombreArchivo;
+        document.body.appendChild(enlace);
+        enlace.click();
+        document.body.removeChild(enlace);
+    }
+
+    function exportarClientesCSV() {
+        const clientes = db.obtenerClientes();
+        if (clientes.length === 0) {
+            alert('No hay consultantes para exportar.');
+            return;
+        }
+
+        let csv = 'ID,Nombre,Telefono,Email,Motivo Consulta,Fecha Registro\n';
+        clientes.forEach(c => {
+            const fila = [
+                `"${c.id}"`,
+                `"${(c.nombre || '').replace(/"/g, '""')}"`,
+                `"${(c.telefono || '').replace(/"/g, '""')}"`,
+                `"${(c.email || '').replace(/"/g, '""')}"`,
+                `"${(c.motivoConsulta || '').replace(/"/g, '""')}"`,
+                `"${c.fechaRegistro || ''}"`
+            ];
+            csv += fila.join(',') + '\n';
+        });
+
+        descargarArchivo("\uFEFF" + csv, `AlmaRaiz_Clientes_${new Date().toISOString().slice(0,10)}.csv`, 'text/csv;charset=utf-8;');
+        mostrarNotificacion('📊 Archivo CSV de Clientes descargado.');
+    }
+
+    function exportarSesionesCSV() {
+        const sesiones = db.obtenerSesiones();
+        if (sesiones.length === 0) {
+            alert('No hay sesiones para exportar.');
+            return;
+        }
+
+        let csv = 'ID Sesion,ID Consultante,Nombre Consultante,Tipo Terapia,Fecha Sesion,Evolucion,Temas Tratados,Fecha Proxima Cita\n';
+        sesiones.forEach(s => {
+            const fila = [
+                `"${s.id}"`,
+                `"${s.clienteId}"`,
+                `"${(s.clienteNombre || '').replace(/"/g, '""')}"`,
+                `"${(s.tipoTerapia || '').replace(/"/g, '""')}"`,
+                `"${s.fechaSesion}"`,
+                `"${s.evolucion}"`,
+                `"${(s.temasTratados || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
+                `"${s.fechaProxima || ''}"`
+            ];
+            csv += fila.join(',') + '\n';
+        });
+
+        descargarArchivo("\uFEFF" + csv, `AlmaRaiz_Sesiones_${new Date().toISOString().slice(0,10)}.csv`, 'text/csv;charset=utf-8;');
+        mostrarNotificacion('📊 Archivo CSV de Sesiones descargado.');
+    }
+
+    function exportarBackupJSON() {
+        const datos = db._leer();
+        const jsonStr = JSON.stringify(datos, null, 2);
+        descargarArchivo(jsonStr, `AlmaRaiz_Backup_${new Date().toISOString().slice(0,10)}.json`, 'application/json');
+        mostrarNotificacion('📂 Copia de seguridad JSON descargada.');
+    }
+
+    function importarBackupJSON(event) {
+        const archivo = event.target.files[0];
+        if (!archivo) return;
+
+        const lector = new FileReader();
+        lector.onload = function(e) {
+            try {
+                const datos = JSON.parse(e.target.result);
+                if (datos.clientes && datos.sesiones) {
+                    if (confirm(`Se encontraron ${datos.clientes.length} consultantes y ${datos.sesiones.length} sesiones. ¿Deseas restaurar esta copia reemplazando los datos actuales?`)) {
+                        db._guardar(datos);
+                        actualizarSelects();
+                        actualizarContadores();
+                        aplicarFiltrosHistorial();
+                        renderizarDirectorio();
+                        mostrarNotificacion('✅ Respaldo restaurado con éxito.');
+                    }
+                } else {
+                    alert('El archivo no tiene el formato de respaldo válido de Alma Raíz.');
+                }
+            } catch (err) {
+                alert('Error al leer el archivo JSON: ' + err.message);
+            }
+        };
+        lector.readAsText(archivo);
+        event.target.value = '';
+    }
+
+    // INICIALIZACIÓN
+    actualizarSelects();
+    actualizarContadores();
+    aplicarFiltrosHistorial();
+</script>
+</body>
+</html>
