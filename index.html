@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -263,6 +263,14 @@
 
         @media (max-width: 550px) {
             .form-row { grid-template-columns: 1fr; }
+        }
+
+        .age-badge {
+            display: inline-block;
+            margin-left: 6px;
+            font-size: 0.8rem;
+            color: var(--accent-green);
+            font-weight: 700;
         }
 
         /* BUTTONS */
@@ -593,6 +601,19 @@
                 <form id="formCliente">
                     <label for="nombre">Nombre Completo *</label>
                     <input type="text" id="nombre" required placeholder="Ej. Laura Pérez">
+
+                    <div class="form-row">
+                        <div>
+                            <label for="dni">DNI / Documento</label>
+                            <input type="text" id="dni" placeholder="Ej. 34.567.890">
+                        </div>
+                        <div>
+                            <label for="fechaNacimiento">
+                                Fecha de Nacimiento <span id="edadCalculadaBadge" class="age-badge"></span>
+                            </label>
+                            <input type="date" id="fechaNacimiento" onchange="actualizarCalculoEdadPreview()">
+                        </div>
+                    </div>
                     
                     <div class="form-row">
                         <div>
@@ -686,8 +707,8 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="filtroTexto">Buscar palabra clave</label>
-                        <input type="text" id="filtroTexto" placeholder="Ej. plexo solar, paz, chakra..." oninput="aplicarFiltrosHistorial()">
+                        <label for="filtroTexto">Buscar palabra clave / DNI</label>
+                        <input type="text" id="filtroTexto" placeholder="Ej. plexo solar, DNI, síntoma..." oninput="aplicarFiltrosHistorial()">
                     </div>
 
                     <div class="form-group">
@@ -712,14 +733,15 @@
         <div class="card">
             <div class="card-header">
                 <h2>👥 Directorio de Consultantes</h2>
-                <div style="width: 250px;"><input type="text" id="buscadorDirectorio" placeholder="🔍 Buscar por nombre o teléfono..." style="margin-bottom:0;" oninput="renderizarDirectorio()"></div>
+                <div style="width: 280px;"><input type="text" id="buscadorDirectorio" placeholder="🔍 Buscar por nombre, DNI o WhatsApp..." style="margin-bottom:0;" oninput="renderizarDirectorio()"></div>
             </div>
 
             <div style="overflow-x: auto;">
                 <table class="client-table">
                     <thead>
                         <tr>
-                            <th>Nombre</th>
+                            <th>Nombre &amp; Documento</th>
+                            <th>Nacimiento / Edad</th>
                             <th>Contacto</th>
                             <th>Motivo / Intención</th>
                             <th>Sesiones</th>
@@ -754,13 +776,13 @@
                 <h2>💾 Exportación de Datos y Copia de Seguridad</h2>
             </div>
             <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">
-                Descarga tu base de datos en formato <strong>CSV</strong> (compatible con Excel y Google Sheets) o genera un respaldo completo en <strong>JSON</strong> para resguardar tu información de forma segura.
+                Descarga tu base de datos en formato <strong>CSV</strong> (compatible con Excel y Google Sheets) incluyendo DNI, Fechas de Nacimiento y Edades, o genera un respaldo completo en <strong>JSON</strong> para resguardar tu información de forma segura.
             </p>
 
             <div class="export-box">
                 <div class="export-card">
                     <h3>📊 Clientes (CSV)</h3>
-                    <p>Lista completa de consultantes con sus datos de contacto y motivos.</p>
+                    <p>Lista completa de consultantes con DNI, edad, datos de contacto y motivos.</p>
                     <button class="btn btn-gold btn-sm" onclick="exportarClientesCSV()">Descargar Clientes CSV</button>
                 </div>
 
@@ -789,6 +811,36 @@
 </div>
 
 <script>
+    // --- UTILIDAD: CÁLCULO DE EDAD ---
+    function calcularEdad(fechaNacStr) {
+        if (!fechaNacStr) return null;
+        const fechaNac = new Date(fechaNacStr + 'T00:00:00');
+        if (isNaN(fechaNac.getTime())) return null;
+        
+        const hoy = new Date();
+        let edad = hoy.getFullYear() - fechaNac.getFullYear();
+        const m = hoy.getMonth() - fechaNac.getMonth();
+        if (m < 0 || (m === 0 && hoy.getDate() < fechaNac.getDate())) {
+            edad--;
+        }
+        return edad >= 0 ? edad : null;
+    }
+
+    function actualizarCalculoEdadPreview() {
+        const fecha = document.getElementById('fechaNacimiento').value;
+        const badge = document.getElementById('edadCalculadaBadge');
+        if (fecha) {
+            const edad = calcularEdad(fecha);
+            if (edad !== null) {
+                badge.textContent = `(${edad} años)`;
+            } else {
+                badge.textContent = '';
+            }
+        } else {
+            badge.textContent = '';
+        }
+    }
+
     // --- CAPA DE DATOS CON LOCALSTORAGE ---
     class AlmaRaizDB {
         constructor() {
@@ -822,11 +874,13 @@
         }
 
         // CLIENTES
-        agregarCliente(nombre, telefono, email, motivoConsulta) {
+        agregarCliente(nombre, dni, fechaNacimiento, telefono, email, motivoConsulta) {
             const datos = this._leer();
             const nuevoCliente = {
                 id: Date.now().toString(),
                 nombre: nombre.trim(),
+                dni: dni ? dni.trim() : '',
+                fechaNacimiento: fechaNacimiento || '',
                 telefono: telefono ? telefono.trim() : '',
                 email: email ? email.trim() : '',
                 motivoConsulta: motivoConsulta ? motivoConsulta.trim() : '',
@@ -918,10 +972,10 @@
         const filtroCliente = document.getElementById('filtroCliente');
 
         const opciones = '<option value="">-- Elige un consultante --</option>' + 
-            clientes.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
+            clientes.map(c => `<option value="${c.id}">${c.nombre} ${c.dni ? `(DNI: ${c.dni})` : ''}</option>`).join('');
 
         const opcionesFiltro = '<option value="">-- Todos los consultantes --</option>' + 
-            clientes.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
+            clientes.map(c => `<option value="${c.id}">${c.nombre} ${c.dni ? `(DNI: ${c.dni})` : ''}</option>`).join('');
 
         selectCliente.innerHTML = opciones;
         filtroCliente.innerHTML = opcionesFiltro;
@@ -942,13 +996,16 @@
     document.getElementById('formCliente').addEventListener('submit', (e) => {
         e.preventDefault();
         const nombre = document.getElementById('nombre').value;
+        const dni = document.getElementById('dni').value;
+        const fechaNacimiento = document.getElementById('fechaNacimiento').value;
         const telefono = document.getElementById('telefono').value;
         const email = document.getElementById('email').value;
         const motivo = document.getElementById('motivoConsulta').value;
 
-        db.agregarCliente(nombre, telefono, email, motivo);
+        db.agregarCliente(nombre, dni, fechaNacimiento, telefono, email, motivo);
         mostrarNotificacion(`🌸 Consultante "${nombre}" guardado con éxito.`);
         document.getElementById('formCliente').reset();
+        document.getElementById('edadCalculadaBadge').textContent = '';
         actualizarSelects();
     });
 
@@ -983,11 +1040,14 @@
             sesiones = sesiones.filter(s => s.evolucion === evolucion);
         }
         if (texto) {
-            sesiones = sesiones.filter(s => 
-                (s.temasTratados && s.temasTratados.toLowerCase().includes(texto)) ||
-                (s.tipoTerapia && s.tipoTerapia.toLowerCase().includes(texto)) ||
-                (s.clienteNombre && s.clienteNombre.toLowerCase().includes(texto))
-            );
+            sesiones = sesiones.filter(s => {
+                const cliente = db.obtenerClientePorId(s.clienteId);
+                const dniMatch = cliente && cliente.dni && cliente.dni.toLowerCase().includes(texto);
+                return dniMatch ||
+                    (s.temasTratados && s.temasTratados.toLowerCase().includes(texto)) ||
+                    (s.tipoTerapia && s.tipoTerapia.toLowerCase().includes(texto)) ||
+                    (s.clienteNombre && s.clienteNombre.toLowerCase().includes(texto));
+            });
         }
         if (desde) {
             const d = new Date(desde);
@@ -1022,6 +1082,7 @@
                     <div class="session-header">
                         <div>
                             <span class="session-client-name">${s.clienteNombre}</span>
+                            ${cliente && cliente.dni ? `<span style="font-size:0.82rem; color:var(--text-muted); margin-left:6px;">(DNI: ${cliente.dni})</span>` : ''}
                             <span style="font-size:0.8rem; color:var(--text-muted); margin-left:8px;">• ${s.tipoTerapia}</span>
                         </div>
                         <span class="badge ${badgeClass}">${s.evolucion}</span>
@@ -1076,6 +1137,7 @@
         if (query) {
             clientes = clientes.filter(c => 
                 c.nombre.toLowerCase().includes(query) || 
+                (c.dni && c.dni.toLowerCase().includes(query)) ||
                 c.telefono.includes(query) || 
                 c.email.toLowerCase().includes(query)
             );
@@ -1093,15 +1155,26 @@
         empty.style.display = 'none';
         tbody.innerHTML = clientes.map(c => {
             const cantSesiones = db.obtenerSesionesPorCliente(c.id).length;
+            const edad = calcularEdad(c.fechaNacimiento);
+            const edadTexto = edad !== null ? `${edad} años` : 'No especificada';
+            const fechaNacFormateada = c.fechaNacimiento ? new Date(c.fechaNacimiento + 'T00:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
+
             return `
                 <tr>
-                    <td><strong>${c.nombre}</strong></td>
+                    <td>
+                        <strong>${c.nombre}</strong>
+                        ${c.dni ? `<div style="font-size:0.8rem; color:var(--text-muted);">DNI: ${c.dni}</div>` : '<div style="font-size:0.78rem; color:var(--text-muted);">Sin DNI</div>'}
+                    </td>
+                    <td>
+                        ${edad !== null ? `<strong>${edadTexto}</strong>` : '<span style="color:var(--text-muted); font-size:0.82rem;">-</span>'}
+                        ${fechaNacFormateada ? `<div style="font-size:0.78rem; color:var(--text-muted);">${fechaNacFormateada}</div>` : ''}
+                    </td>
                     <td>
                         ${c.telefono ? `<div>📱 ${c.telefono}</div>` : ''}
                         ${c.email ? `<div>✉️ ${c.email}</div>` : ''}
                         ${!c.telefono && !c.email ? '<span style="color:var(--text-muted); font-size:0.8rem;">Sin contacto</span>' : ''}
                     </td>
-                    <td style="font-size:0.85rem; color:var(--text-muted); max-width:220px;">
+                    <td style="font-size:0.85rem; color:var(--text-muted); max-width:200px;">
                         ${c.motivoConsulta || '<em>Sin motivo registrado</em>'}
                     </td>
                     <td>
@@ -1211,11 +1284,15 @@
             return;
         }
 
-        let csv = 'ID,Nombre,Telefono,Email,Motivo Consulta,Fecha Registro\n';
+        let csv = 'ID,Nombre,DNI,Fecha Nacimiento,Edad,Telefono,Email,Motivo Consulta,Fecha Registro\n';
         clientes.forEach(c => {
+            const edad = calcularEdad(c.fechaNacimiento);
             const fila = [
                 `"${c.id}"`,
                 `"${(c.nombre || '').replace(/"/g, '""')}"`,
+                `"${(c.dni || '').replace(/"/g, '""')}"`,
+                `"${c.fechaNacimiento || ''}"`,
+                `"${edad !== null ? edad : ''}"`,
                 `"${(c.telefono || '').replace(/"/g, '""')}"`,
                 `"${(c.email || '').replace(/"/g, '""')}"`,
                 `"${(c.motivoConsulta || '').replace(/"/g, '""')}"`,
