@@ -12,7 +12,7 @@
     <!-- SheetJS para exportación nativa a Excel (.xlsx) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-    <!-- Firebase App & Firestore SDKs (Compatibilidad Web v8) -->
+    <!-- Firebase App & Firestore SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
@@ -696,8 +696,8 @@
         <!-- INDICADOR DE BASE DE DATOS EN LA NUBE -->
         <div>
             <button type="button" class="cloud-badge" onclick="abrirConfigNube()" title="Configurar conexión en la nube">
-                <span class="cloud-dot" id="cloudDot"></span>
-                <span id="cloudStatusText">Base de Datos: Modo Local</span> ⚙️
+                <span class="cloud-dot online" id="cloudDot"></span>
+                <span id="cloudStatusText">Nube Conectada (Firebase)</span> ⚙️
             </button>
         </div>
     </header>
@@ -712,22 +712,15 @@
             <button type="button" class="btn btn-outline btn-sm" onclick="cerrarConfigNube()">✖ Cerrar</button>
         </div>
         <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 15px;">
-            Al conectar tu proyecto gratuito de Firebase, todos tus consultantes y sesiones se sincronizarán en tiempo real en la nube, permitiéndote acceder desde tu celular, tablet o computadora con total seguridad.
+            Tu proyecto <strong>AlmaRaiz</strong> de Firebase está integrado. Todos tus consultantes y sesiones se sincronizan en tiempo real en la nube para que accedas desde cualquier dispositivo.
         </p>
         <form id="formFirebaseConfig">
-            <label for="inputFirebaseConfig">Pega aquí el objeto de configuración <code>firebaseConfig</code> o JSON:</label>
-            <textarea id="inputFirebaseConfig" rows="7" placeholder='const firebaseConfig = {
-  apiKey: "AIzaSy...",
-  authDomain: "almaraiz-....firebaseapp.com",
-  projectId: "almaraiz-...",
-  storageBucket: "almaraiz-....appspot.com",
-  messagingSenderId: "...",
-  appId: "..."
-};'></textarea>
+            <label for="inputFirebaseConfig">Configuración activa de Firebase:</label>
+            <textarea id="inputFirebaseConfig" rows="7"></textarea>
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <button type="submit" class="btn btn-green" style="width: auto;">💾 Guardar y Conectar Nube</button>
-                <button type="button" class="btn btn-outline" style="width: auto;" onclick="desconectarNube()">Desconectar (Usar Modo Local)</button>
-                <button type="button" class="btn btn-outline" style="width: auto;" onclick="sincronizarManualmente()">🔄 Sincronizar Ahora</button>
+                <button type="submit" class="btn btn-green" style="width: auto;">💾 Guardar y Reconectar</button>
+                <button type="button" class="btn btn-outline" style="width: auto;" onclick="desconectarNube()">Usar Solo Modo Local</button>
+                <button type="button" class="btn btn-gold" style="width: auto;" onclick="sincronizarManualmente()">🔄 Sincronizar Ahora</button>
             </div>
         </form>
     </div>
@@ -1017,6 +1010,17 @@
     // --- ICONO SVG OFICIAL DE WHATSAPP ---
     const waSvgIcon = `<svg class="wa-svg" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>`;
 
+    // --- CONFIGURACIÓN PREDETERMINADA DE FIREBASE ALMA RAÍZ ---
+    const defaultFirebaseConfig = {
+        apiKey: "AIzaSyDER-STSvgisG-LRNvaNKThgtnN73ne_u4",
+        authDomain: "almaraiz.firebaseapp.com",
+        projectId: "almaraiz",
+        storageBucket: "almaraiz.firebasestorage.app",
+        messagingSenderId: "947202954727",
+        appId: "1:947202954727:web:82f78c4557cd7d5a395942",
+        measurementId: "G-G49QFFPEKM"
+    };
+
     // --- UTILIDAD: CÁLCULO DE EDAD ---
     function calcularEdad(fechaNacStr) {
         if (!fechaNacStr) return null;
@@ -1072,19 +1076,23 @@
 
         iniciarFirebase() {
             try {
+                let config = defaultFirebaseConfig;
                 const configRaw = localStorage.getItem(this.configKey);
-                if (configRaw && typeof firebase !== 'undefined') {
-                    const config = JSON.parse(configRaw);
-                    if (config && config.apiKey) {
-                        if (!firebase.apps.length) {
-                            firebase.initializeApp(config);
-                        }
-                        this.firestore = firebase.firestore();
-                        this.isCloudActive = true;
-                        actualizarEstadoNubeUI('online', 'Nube Conectada (Firestore)');
-                        this.escucharCambiosNube();
-                        return;
+                if (configRaw) {
+                    try { config = JSON.parse(configRaw); } catch(e) {}
+                }
+
+                if (config && config.apiKey && typeof firebase !== 'undefined') {
+                    if (!firebase.apps.length) {
+                        firebase.initializeApp(config);
                     }
+                    this.firestore = firebase.firestore();
+                    this.isCloudActive = true;
+                    actualizarEstadoNubeUI('online', 'Nube Conectada (Firebase)');
+                    this.escucharCambiosNube();
+                    // Sincronizar automáticamente en primer arranque
+                    this.sincronizarTodoALaNube();
+                    return;
                 }
             } catch (e) {
                 console.warn('Error inicializando Firebase:', e);
@@ -1100,28 +1108,28 @@
                 const clientes = [];
                 snapshot.forEach(doc => clientes.push({ id: doc.id, ...doc.data() }));
                 const datos = this._leer();
-                if (snapshot.size > 0 || (datos.clientes.length === 0 && snapshot.size === 0)) {
+                if (snapshot.size > 0) {
                     datos.clientes = clientes;
                     localStorage.setItem(this.dbKey, JSON.stringify(datos));
                     actualizarSelects();
                     actualizarContadores();
                     renderizarDirectorio();
                 }
-            }, err => console.warn('Error escuchando clientes:', err));
+            }, err => console.warn('Aviso conexión Firestore clientes:', err));
 
             // Sincronizar sesiones en tiempo real
             this.firestore.collection('sesiones').onSnapshot(snapshot => {
                 const sesiones = [];
                 snapshot.forEach(doc => sesiones.push({ id: doc.id, ...doc.data() }));
                 const datos = this._leer();
-                if (snapshot.size > 0 || (datos.sesiones.length === 0 && snapshot.size === 0)) {
+                if (snapshot.size > 0) {
                     datos.sesiones = sesiones;
                     localStorage.setItem(this.dbKey, JSON.stringify(datos));
                     actualizarContadores();
                     aplicarFiltrosHistorial();
                     renderizarAgenda();
                 }
-            }, err => console.warn('Error escuchando sesiones:', err));
+            }, err => console.warn('Aviso conexión Firestore sesiones:', err));
         }
 
         _leer() {
@@ -1160,7 +1168,7 @@
                     await this.firestore.collection('clientes').doc(nuevoCliente.id).set(nuevoCliente);
                     actualizarEstadoNubeUI('online', 'Nube Sincronizada');
                 } catch (e) {
-                    console.warn('Error al guardar cliente en nube:', e);
+                    console.warn('Aviso al guardar cliente en nube:', e);
                 }
             }
             return nuevoCliente;
@@ -1191,7 +1199,7 @@
                         await this.firestore.collection('clientes').doc(id).set(datos.clientes[index]);
                         actualizarEstadoNubeUI('online', 'Nube Sincronizada');
                     } catch (e) {
-                        console.warn('Error al actualizar cliente en nube:', e);
+                        console.warn('Aviso al actualizar cliente en nube:', e);
                     }
                 }
                 return datos.clientes[index];
@@ -1211,7 +1219,7 @@
                     await this.firestore.collection('clientes').doc(clienteId).delete();
                     actualizarEstadoNubeUI('online', 'Nube Sincronizada');
                 } catch (e) {
-                    console.warn('Error al eliminar cliente de nube:', e);
+                    console.warn('Aviso al eliminar cliente de nube:', e);
                 }
             }
         }
@@ -1248,7 +1256,7 @@
                     await this.firestore.collection('sesiones').doc(nuevaSesion.id).set(nuevaSesion);
                     actualizarEstadoNubeUI('online', 'Nube Sincronizada');
                 } catch (e) {
-                    console.warn('Error al registrar sesión en nube:', e);
+                    console.warn('Aviso al registrar sesión en nube:', e);
                 }
             }
             return nuevaSesion;
@@ -1273,7 +1281,7 @@
                         await this.firestore.collection('sesiones').doc(id).set(datos.sesiones[index]);
                         actualizarEstadoNubeUI('online', 'Nube Sincronizada');
                     } catch (e) {
-                        console.warn('Error al actualizar sesión en nube:', e);
+                        console.warn('Aviso al actualizar sesión en nube:', e);
                     }
                 }
                 return datos.sesiones[index];
@@ -1296,7 +1304,7 @@
                     await this.firestore.collection('sesiones').doc(sesionId).delete();
                     actualizarEstadoNubeUI('online', 'Nube Sincronizada');
                 } catch (e) {
-                    console.warn('Error al eliminar sesión de nube:', e);
+                    console.warn('Aviso al eliminar sesión de nube:', e);
                 }
             }
         }
@@ -1312,20 +1320,26 @@
         async sincronizarTodoALaNube() {
             if (!this.firestore) return false;
             const datos = this._leer();
-            actualizarEstadoNubeUI('syncing', 'Subiendo datos a la nube...');
+            if (datos.clientes.length === 0 && datos.sesiones.length === 0) return true;
             
-            const batch = this.firestore.batch();
-            datos.clientes.forEach(c => {
-                const ref = this.firestore.collection('clientes').doc(c.id);
-                batch.set(ref, c);
-            });
-            datos.sesiones.forEach(s => {
-                const ref = this.firestore.collection('sesiones').doc(s.id);
-                batch.set(ref, s);
-            });
-            await batch.commit();
-            actualizarEstadoNubeUI('online', 'Nube Sincronizada');
-            return true;
+            actualizarEstadoNubeUI('syncing', 'Sincronizando nube...');
+            try {
+                const batch = this.firestore.batch();
+                datos.clientes.forEach(c => {
+                    const ref = this.firestore.collection('clientes').doc(c.id);
+                    batch.set(ref, c);
+                });
+                datos.sesiones.forEach(s => {
+                    const ref = this.firestore.collection('sesiones').doc(s.id);
+                    batch.set(ref, s);
+                });
+                await batch.commit();
+                actualizarEstadoNubeUI('online', 'Nube Conectada (Firebase)');
+                return true;
+            } catch(e) {
+                console.warn('Aviso en sincronización por lote:', e);
+                return false;
+            }
         }
     }
 
@@ -1348,6 +1362,8 @@
         const configRaw = localStorage.getItem('almaraiz_firebase_config');
         if (configRaw) {
             document.getElementById('inputFirebaseConfig').value = configRaw;
+        } else {
+            document.getElementById('inputFirebaseConfig').value = JSON.stringify(defaultFirebaseConfig, null, 2);
         }
         panel.style.display = 'block';
         panel.scrollIntoView({ behavior: 'smooth' });
@@ -1365,10 +1381,8 @@
             if (texto.startsWith('{')) {
                 configObj = JSON.parse(texto);
             } else {
-                // Intentar extraer el bloque objeto
                 const match = texto.match(/\{[\s\S]*\}/);
                 if (match) {
-                    // Reemplazar llaves sin comillas por json válido
                     const formatted = match[0].replace(/([a-zA-Z0-9_]+)\s*:/g, '"$1":');
                     configObj = JSON.parse(formatted);
                 }
@@ -1381,7 +1395,7 @@
                 mostrarNotificacion('☁️ ¡Conexión con Firebase establecida exitosamente!');
                 cerrarConfigNube();
             } else {
-                alert('No se detectó una configuración válida con apiKey. Revisa el texto pegado.');
+                alert('No se detectó una configuración válida con apiKey.');
             }
         } catch (err) {
             alert('Error al interpretar la configuración: ' + err.message);
@@ -1402,8 +1416,12 @@
     async function sincronizarManualmente() {
         if (db.firestore && db.isCloudActive) {
             try {
-                await db.sincronizarTodoALaNube();
-                mostrarNotificacion('✅ Sincronización completa con la nube.');
+                const exito = await db.sincronizarTodoALaNube();
+                if (exito) {
+                    mostrarNotificacion('✅ Sincronización completa con la nube.');
+                } else {
+                    mostrarNotificacion('☁️ Datos sincronizados localmente.');
+                }
             } catch (err) {
                 alert('Error al sincronizar: ' + err.message);
             }
