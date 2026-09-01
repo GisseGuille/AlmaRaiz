@@ -239,7 +239,7 @@
         }
 
         .tab-btn.active .icon-rosa-viejo {
-            color: #f2c8c2; /* Rosa viejo claro y armónico cuando la pestaña está activa */
+            color: #f2c8c2;
         }
 
         /* TAB PANELS */
@@ -734,7 +734,7 @@
             <button type="button" class="btn btn-outline btn-sm" onclick="cerrarConfigNube()">✖ Cerrar</button>
         </div>
         <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 15px;">
-            Tu proyecto <strong>AlmaRaiz</strong> de Firebase está integrado. Todos tus consultantes y sesiones se sincronizan en tiempo real en la nube para que accedas desde cualquier dispositivo.
+            Tu proyecto <strong>AlmaRaiz</strong> de Firebase está integrado de fábrica. Todos tus consultantes y sesiones se sincronizan en tiempo real en la nube para que accedas desde cualquier dispositivo.
         </p>
         <form id="formFirebaseConfig">
             <label for="inputFirebaseConfig">Configuración activa de Firebase:</label>
@@ -1053,6 +1053,36 @@
         measurementId: "G-G49QFFPEKM"
     };
 
+    // --- PARSER INTELIGENTE DE CONFIGURACIÓN ---
+    function extraerFirebaseConfig(texto) {
+        if (!texto) return defaultFirebaseConfig;
+        try {
+            const obj = JSON.parse(texto);
+            if (obj && obj.apiKey) return obj;
+        } catch(e) {}
+
+        const apiKey = (texto.match(/apiKey\s*:\s*["']([^"']+)["']/) || [])[1];
+        const authDomain = (texto.match(/authDomain\s*:\s*["']([^"']+)["']/) || [])[1];
+        const projectId = (texto.match(/projectId\s*:\s*["']([^"']+)["']/) || [])[1];
+        const storageBucket = (texto.match(/storageBucket\s*:\s*["']([^"']+)["']/) || [])[1];
+        const messagingSenderId = (texto.match(/messagingSenderId\s*:\s*["']([^"']+)["']/) || [])[1];
+        const appId = (texto.match(/appId\s*:\s*["']([^"']+)["']/) || [])[1];
+        const measurementId = (texto.match(/measurementId\s*:\s*["']([^"']+)["']/) || [])[1];
+
+        if (apiKey && projectId) {
+            return {
+                apiKey,
+                authDomain: authDomain || `${projectId}.firebaseapp.com`,
+                projectId,
+                storageBucket: storageBucket || `${projectId}.firebasestorage.app`,
+                messagingSenderId: messagingSenderId || '',
+                appId: appId || '',
+                measurementId: measurementId || ''
+            };
+        }
+        return defaultFirebaseConfig;
+    }
+
     // --- UTILIDAD: CÁLCULO DE EDAD ---
     function calcularEdad(fechaNacStr) {
         if (!fechaNacStr) return null;
@@ -1111,7 +1141,7 @@
                 let config = defaultFirebaseConfig;
                 const configRaw = localStorage.getItem(this.configKey);
                 if (configRaw) {
-                    try { config = JSON.parse(configRaw); } catch(e) {}
+                    config = extraerFirebaseConfig(configRaw);
                 }
 
                 if (config && config.apiKey && typeof firebase !== 'undefined') {
@@ -1122,12 +1152,11 @@
                     this.isCloudActive = true;
                     actualizarEstadoNubeUI('online', 'Nube Conectada (Firebase)');
                     this.escucharCambiosNube();
-                    // Sincronizar automáticamente en primer arranque
                     this.sincronizarTodoALaNube();
                     return;
                 }
             } catch (e) {
-                console.warn('Error inicializando Firebase:', e);
+                console.warn('Aviso inicialización Firebase:', e);
             }
             this.isCloudActive = false;
             actualizarEstadoNubeUI('offline', 'Modo Local');
@@ -1408,29 +1437,19 @@
     document.getElementById('formFirebaseConfig').addEventListener('submit', async (e) => {
         e.preventDefault();
         const texto = document.getElementById('inputFirebaseConfig').value.trim();
-        try {
-            let configObj = null;
-            if (texto.startsWith('{')) {
-                configObj = JSON.parse(texto);
-            } else {
-                const match = texto.match(/\{[\s\S]*\}/);
-                if (match) {
-                    const formatted = match[0].replace(/([a-zA-Z0-9_]+)\s*:/g, '"$1":');
-                    configObj = JSON.parse(formatted);
-                }
-            }
+        const configObj = extraerFirebaseConfig(texto);
 
-            if (configObj && configObj.apiKey) {
-                localStorage.setItem('almaraiz_firebase_config', JSON.stringify(configObj));
-                db.iniciarFirebase();
-                await db.sincronizarTodoALaNube();
-                mostrarNotificacion('☁️ ¡Conexión con Firebase establecida exitosamente!');
-                cerrarConfigNube();
-            } else {
-                alert('No se detectó una configuración válida con apiKey.');
-            }
-        } catch (err) {
-            alert('Error al interpretar la configuración: ' + err.message);
+        if (configObj && configObj.apiKey) {
+            localStorage.setItem('almaraiz_firebase_config', JSON.stringify(configObj, null, 2));
+            db.iniciarFirebase();
+            await db.sincronizarTodoALaNube();
+            mostrarNotificacion('☁️ ¡Conexión con Firebase establecida exitosamente!');
+            cerrarConfigNube();
+        } else {
+            alert('No se pudo interpretar la configuración. Restableciendo a la configuración por defecto de AlmaRaiz.');
+            localStorage.setItem('almaraiz_firebase_config', JSON.stringify(defaultFirebaseConfig, null, 2));
+            db.iniciarFirebase();
+            cerrarConfigNube();
         }
     });
 
@@ -1458,7 +1477,8 @@
                 alert('Error al sincronizar: ' + err.message);
             }
         } else {
-            alert('Primero debes configurar y conectar Firebase.');
+            db.iniciarFirebase();
+            mostrarNotificacion('Reintentando conexión con Firebase...');
         }
     }
 
