@@ -8,6 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,400&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- SheetJS para exportación nativa a Excel (.xlsx) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         :root {
             --primary: #684128;        /* Tono raíz / tierra noble */
@@ -15,6 +17,7 @@
             --primary-light: #f7efe7;
             --accent-gold: #c6934b;    /* Tono dorado sagrado */
             --accent-green: #597d62;   /* Verde sanación / reiki */
+            --accent-blue: #2b7a9b;    /* Azul etéreo / inicio */
             --accent-rose: #d48c80;    /* Flor de loto */
             --bg: #faf6f0;             /* Fondo crema suave */
             --card-bg: #ffffff;
@@ -186,19 +189,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* CARDS & LAYOUT */
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        @media (max-width: 768px) {
-            .grid-2 {
-                grid-template-columns: 1fr;
-            }
-        }
-
         .card {
             background: var(--card-bg);
             padding: 24px;
@@ -215,6 +205,8 @@
             margin-bottom: 18px;
             padding-bottom: 10px;
             border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
         h2 {
@@ -261,8 +253,14 @@
             gap: 12px;
         }
 
-        @media (max-width: 550px) {
-            .form-row { grid-template-columns: 1fr; }
+        .form-row-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+        }
+
+        @media (max-width: 650px) {
+            .form-row, .form-row-3 { grid-template-columns: 1fr; }
         }
 
         .age-badge {
@@ -278,10 +276,10 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            padding: 11px 20px;
+            gap: 6px;
+            padding: 10px 18px;
             border-radius: 8px;
-            font-size: 0.92rem;
+            font-size: 0.9rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.25s ease;
@@ -318,16 +316,13 @@
             background-color: #4a6a52;
         }
 
-        .btn-whatsapp {
-            background-color: #25D366;
-            color: white;
-            font-size: 0.8rem;
-            padding: 6px 12px;
-            border-radius: 6px;
+        .btn-excel {
+            background-color: #1D6F42;
+            color: #ffffff;
         }
 
-        .btn-whatsapp:hover {
-            background-color: #1ebd56;
+        .btn-excel:hover {
+            background-color: #155231;
         }
 
         .btn-outline {
@@ -344,7 +339,7 @@
 
         .btn-sm {
             padding: 6px 12px;
-            font-size: 0.8rem;
+            font-size: 0.82rem;
             border-radius: 6px;
         }
 
@@ -418,6 +413,7 @@
             transform: translateY(-2px);
         }
 
+        .session-card.inicial { border-left-color: var(--accent-blue); }
         .session-card.avance { border-left-color: var(--accent-green); }
         .session-card.estable { border-left-color: var(--accent-gold); }
         .session-card.retroceso { border-left-color: var(--accent-rose); }
@@ -448,6 +444,7 @@
             letter-spacing: 0.5px;
         }
 
+        .badge-inicial { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; }
         .badge-avance { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
         .badge-estable { background: #fff8e1; color: #f57f17; border: 1px solid #ffecb3; }
         .badge-retroceso { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
@@ -474,7 +471,7 @@
             padding-top: 10px;
         }
 
-        /* CLIENT DIRECTORY TABLE */
+        /* CLIENT DIRECTORY & GRID TABLE */
         .client-table {
             width: 100%;
             border-collapse: collapse;
@@ -500,10 +497,99 @@
             background-color: #faf7f2;
         }
 
+        /* DISEÑO DE BOTONES DE ACCIÓN (ESTILO IMAGEN DE REFERENCIA) */
         .table-actions {
             display: flex;
+            flex-direction: column;
             gap: 6px;
+            width: 135px;
+        }
+
+        .btn-action-main {
+            background-color: #55755e;
+            color: #ffffff;
+            width: 100%;
+            padding: 6px 10px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            border-radius: 8px;
+            display: flex;
             align-items: center;
+            justify-content: center;
+            gap: 5px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(85, 117, 94, 0.2);
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .btn-action-main:hover {
+            background-color: #435e4b;
+            transform: translateY(-1px);
+        }
+
+        .table-actions-icons {
+            display: flex;
+            gap: 6px;
+            width: 100%;
+        }
+
+        .btn-action-icon {
+            flex: 1;
+            height: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 7px;
+            font-size: 1.05rem;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            padding: 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+        }
+
+        .btn-action-icon:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.08);
+        }
+
+        .btn-action-icon.wa {
+            background-color: #25D366;
+            color: #ffffff;
+        }
+
+        .btn-action-icon.edit {
+            background-color: #c6934b;
+            color: #ffffff;
+        }
+
+        .btn-action-icon.history {
+            background-color: #684128;
+            color: #ffffff;
+            font-size: 0.9rem;
+        }
+
+        .btn-action-icon.delete {
+            background-color: #d9534f;
+            color: #ffffff;
+        }
+
+        .wa-svg {
+            width: 17px;
+            height: 17px;
+            fill: #ffffff;
+            display: block;
+        }
+
+        /* FORMULARIOS DESPLEGABLES / MODAL */
+        #contenedorFormCliente, #cardFormSesion {
+            display: none;
+            animation: fadeIn 0.25s ease;
+            border: 2px solid var(--accent-gold);
+            background: #fffdfb;
         }
 
         /* BACKUP SECTION */
@@ -583,107 +669,167 @@
 
     <!-- PESTAÑAS DE NAVEGACIÓN -->
     <div class="nav-tabs">
-        <button class="tab-btn active" onclick="cambiarPestana('registro')">✍️ Registro Rápido</button>
-        <button class="tab-btn" onclick="cambiarPestana('historial')">🔍 Historial &amp; Filtros</button>
-        <button class="tab-btn" onclick="cambiarPestana('clientes')">👥 Directorio de Clientes</button>
+        <button class="tab-btn active" onclick="cambiarPestana('clientes')">👥 Directorio de Clientes</button>
+        <button class="tab-btn" onclick="cambiarPestana('historial')">📜 Historial de Sesiones</button>
         <button class="tab-btn" onclick="cambiarPestana('agenda')">📅 Próximas Citas</button>
         <button class="tab-btn" onclick="cambiarPestana('exportar')">💾 Exportar / Respaldo</button>
     </div>
 
-    <!-- ================= PESTAÑA 1: REGISTRO RÁPIDO ================= -->
-    <div id="tab-registro" class="tab-content active">
-        <div class="grid-2">
-            <!-- Registrar Cliente -->
-            <div class="card">
-                <div class="card-header">
-                    <h2>🌱 Nuevo Consultante</h2>
+    <!-- ================= PESTAÑA: DIRECTORIO DE CLIENTES ================= -->
+    <div id="tab-clientes" class="tab-content active">
+        
+        <!-- FORMULARIO DE ALTA / EDICIÓN DE CLIENTE (DESPLEGABLE) -->
+        <div class="card" id="contenedorFormCliente" style="max-width: 900px; margin: 0 auto 24px;">
+            <div class="card-header">
+                <h2 id="tituloFormCliente">🌱 Registrar Nuevo Consultante</h2>
+                <button type="button" class="btn btn-outline btn-sm" onclick="ocultarFormularioCliente()">✖ Cerrar</button>
+            </div>
+            <form id="formCliente">
+                <input type="hidden" id="editClienteId" value="">
+
+                <label for="nombre">Nombre Completo *</label>
+                <input type="text" id="nombre" required placeholder="Ej. Laura Pérez">
+
+                <div class="form-row">
+                    <div>
+                        <label for="dni">DNI / Documento</label>
+                        <input type="text" id="dni" placeholder="Ej. 34.567.890">
+                    </div>
+                    <div>
+                        <label for="fechaNacimiento">
+                            Fecha de Nacimiento <span id="edadCalculadaBadge" class="age-badge"></span>
+                        </label>
+                        <input type="date" id="fechaNacimiento" onchange="actualizarCalculoEdadPreview()">
+                    </div>
                 </div>
-                <form id="formCliente">
-                    <label for="nombre">Nombre Completo *</label>
-                    <input type="text" id="nombre" required placeholder="Ej. Laura Pérez">
-
-                    <div class="form-row">
-                        <div>
-                            <label for="dni">DNI / Documento</label>
-                            <input type="text" id="dni" placeholder="Ej. 34.567.890">
-                        </div>
-                        <div>
-                            <label for="fechaNacimiento">
-                                Fecha de Nacimiento <span id="edadCalculadaBadge" class="age-badge"></span>
-                            </label>
-                            <input type="date" id="fechaNacimiento" onchange="actualizarCalculoEdadPreview()">
-                        </div>
+                
+                <div class="form-row">
+                    <div>
+                        <label for="telefono">WhatsApp / Teléfono</label>
+                        <input type="tel" id="telefono" placeholder="Ej. +5491123456789">
                     </div>
-                    
-                    <div class="form-row">
-                        <div>
-                            <label for="telefono">WhatsApp / Teléfono</label>
-                            <input type="tel" id="telefono" placeholder="Ej. +5491123456789">
-                        </div>
-                        <div>
-                            <label for="email">Correo Electrónico</label>
-                            <input type="email" id="email" placeholder="laura@email.com">
-                        </div>
+                    <div>
+                        <label for="email">Correo Electrónico</label>
+                        <input type="email" id="email" placeholder="laura@email.com">
                     </div>
+                </div>
 
-                    <label for="motivoConsulta">Motivo Inicial / Intención</label>
-                    <textarea id="motivoConsulta" rows="2" placeholder="Ej. Ansiedad, búsqueda de alineación energética, insomnio..."></textarea>
-                    
-                    <button type="submit" class="btn btn-primary">Guardar Consultante</button>
-                </form>
+                <label for="motivoConsulta">Motivo Inicial / Intención</label>
+                <textarea id="motivoConsulta" rows="2" placeholder="Ej. Ansiedad, búsqueda de alineación energética, insomnio, cortes energéticos..."></textarea>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" id="btnSubmitCliente" class="btn btn-primary">Guardar Consultante</button>
+                    <button type="button" class="btn btn-outline" style="width: auto;" onclick="ocultarFormularioCliente()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- LISTADO Y GRILLA DE CONSULTANTES -->
+        <div class="card">
+            <div class="card-header">
+                <h2>👥 Directorio de Consultantes</h2>
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <button class="btn btn-green btn-sm" onclick="abrirNuevoConsultante()">
+                        ➕ Nuevo Consultante
+                    </button>
+                    <div style="width: 260px;">
+                        <input type="text" id="buscadorDirectorio" placeholder="🔍 Buscar nombre o DNI..." style="margin-bottom:0;" oninput="renderizarDirectorio()">
+                    </div>
+                </div>
             </div>
 
-            <!-- Registrar Sesión -->
-            <div class="card">
-                <div class="card-header">
-                    <h2>✨ Registrar Sesión</h2>
-                </div>
-                <form id="formSesion">
-                    <label for="selectCliente">Seleccionar Consultante *</label>
-                    <select id="selectCliente" required>
-                        <option value="">-- Elige un consultante --</option>
-                    </select>
-
-                    <div class="form-row">
-                        <div>
-                            <label for="tipoTerapia">Tipo de Sesión</label>
-                            <select id="tipoTerapia">
-                                <option value="Reiki Usui">Reiki Usui</option>
-                                <option value="Alineación de Chakras">Alineación de Chakras</option>
-                                <option value="Reiki a Distancia">Reiki a Distancia</option>
-                                <option value="Sanación Energética Integral">Sanación Energética Integral</option>
-                                <option value="Armonización con Péndulo">Armonización con Péndulo</option>
-                                <option value="Otra Terapia">Otra Terapia</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="evolucion">Evolución Energética *</label>
-                            <select id="evolucion" required>
-                                <option value="Avance">📈 Avance (Alivio, equilibrio)</option>
-                                <option value="Estable">➖ Estable (En proceso)</option>
-                                <option value="Retroceso">📉 Resistencia / Desequilibrio</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <label for="temas">Temas Tratados / Diagnóstico Energético *</label>
-                    <textarea id="temas" rows="3" required placeholder="Ej. Bloqueo en chakra plexo solar y garganta. Se trabajó respiración consciente y corte de lazos. Sensación de paz al finalizar."></textarea>
-                    
-                    <label for="fechaProxima">Próxima Sesión / Cita Agendada</label>
-                    <input type="datetime-local" id="fechaProxima">
-                    
-                    <button type="submit" class="btn btn-primary">Registrar Sesión</button>
-                </form>
+            <div style="overflow-x: auto;">
+                <table class="client-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre &amp; Documento</th>
+                            <th>Nacimiento / Edad</th>
+                            <th>Contacto</th>
+                            <th>Motivo / Intención</th>
+                            <th>Sesiones</th>
+                            <th style="min-width: 150px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaClientesBody">
+                    </tbody>
+                </table>
+            </div>
+            <div id="vacioClientes" class="empty-state" style="display: none;">
+                <span>🌱</span>
+                <p>No hay consultantes registrados aún o no coinciden con la búsqueda.</p>
             </div>
         </div>
     </div>
 
-    <!-- ================= PESTAÑA 2: HISTORIAL Y FILTROS ================= -->
+    <!-- ================= PESTAÑA: HISTORIAL DE SESIONES ================= -->
     <div id="tab-historial" class="tab-content">
+        
+        <!-- FORMULARIO DE REGISTRAR / EDITAR SESIÓN (DESPLEGABLE) -->
+        <div class="card" id="cardFormSesion" style="max-width: 900px; margin: 0 auto 24px;">
+            <div class="card-header">
+                <h2 id="tituloFormSesion">✨ Registrar Nueva Sesión</h2>
+                <button type="button" class="btn btn-outline btn-sm" onclick="ocultarFormularioSesion()">✖ Cerrar</button>
+            </div>
+            <form id="formSesion">
+                <input type="hidden" id="editSesionId" value="">
+
+                <div class="form-row-3">
+                    <div>
+                        <label for="selectCliente">Seleccionar Consultante *</label>
+                        <select id="selectCliente" required>
+                            <option value="">-- Elige un consultante --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="tipoTerapia">Tipo de Sesión</label>
+                        <select id="tipoTerapia">
+                            <option value="Reiki Usui">Reiki Usui</option>
+                            <option value="Alineación de Chakras">Alineación de Chakras</option>
+                            <option value="Reiki a Distancia">Reiki a Distancia</option>
+                            <option value="Sanación Energética Integral">Sanación Energética Integral</option>
+                            <option value="Armonización con Péndulo">Armonización con Péndulo</option>
+                            <option value="Otra Terapia">Otra Terapia</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="evolucion">Evolución Energética *</label>
+                        <select id="evolucion" required>
+                            <option value="Inicial">🌱 Estado Inicial (Evaluación / Diagnóstico base)</option>
+                            <option value="Avance">📈 Avance (Alivio, equilibrio)</option>
+                            <option value="Estable">➖ Estable (En proceso)</option>
+                            <option value="Retroceso">📉 Resistencia / Desequilibrio</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <label for="temas">Temas Tratados / Diagnóstico Energético *</label>
+                <textarea id="temas" rows="3" required placeholder="Ej. Bloqueo en chakra plexo solar y garganta. Se trabajó respiración consciente y corte de lazos. Sensación de paz al finalizar."></textarea>
+                
+                <div class="form-row">
+                    <div>
+                        <label for="fechaProxima">Próxima Sesión / Cita Agendada</label>
+                        <input type="datetime-local" id="fechaProxima">
+                    </div>
+                    <div style="display: flex; align-items: flex-end; gap: 10px; margin-bottom: 15px;">
+                        <button type="submit" id="btnSubmitSesion" class="btn btn-primary" style="height: 48px;">Registrar Sesión</button>
+                        <button type="button" class="btn btn-outline" style="height: 48px; width: auto;" onclick="ocultarFormularioSesion()">Cancelar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- SECCIÓN: HISTORIAL DE SESIONES Y FILTROS -->
         <div class="card">
             <div class="card-header">
-                <h2>📜 Historial de Sesiones &amp; Filtros</h2>
-                <button class="btn btn-outline btn-sm" onclick="limpiarFiltrosHistorial()">Restablecer Filtros</button>
+                <h2>📜 Historial de Sesiones</h2>
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <button class="btn btn-green btn-sm" onclick="abrirNuevaSesion()">
+                        ✨ Registrar Nueva Sesión
+                    </button>
+                    <button class="btn btn-outline btn-sm" onclick="limpiarFiltrosHistorial()">
+                        Restablecer Filtros
+                    </button>
+                </div>
             </div>
 
             <!-- Caja de Búsqueda y Filtros -->
@@ -700,6 +846,7 @@
                         <label for="filtroEvolucion">Evolución</label>
                         <select id="filtroEvolucion" onchange="aplicarFiltrosHistorial()">
                             <option value="">-- Todas --</option>
+                            <option value="Inicial">🌱 Estado Inicial</option>
                             <option value="Avance">📈 Avance</option>
                             <option value="Estable">➖ Estable</option>
                             <option value="Retroceso">📉 Resistencia</option>
@@ -728,38 +875,7 @@
         </div>
     </div>
 
-    <!-- ================= PESTAÑA 3: DIRECTORIO DE CLIENTES ================= -->
-    <div id="tab-clientes" class="tab-content">
-        <div class="card">
-            <div class="card-header">
-                <h2>👥 Directorio de Consultantes</h2>
-                <div style="width: 280px;"><input type="text" id="buscadorDirectorio" placeholder="🔍 Buscar por nombre, DNI o WhatsApp..." style="margin-bottom:0;" oninput="renderizarDirectorio()"></div>
-            </div>
-
-            <div style="overflow-x: auto;">
-                <table class="client-table">
-                    <thead>
-                        <tr>
-                            <th>Nombre &amp; Documento</th>
-                            <th>Nacimiento / Edad</th>
-                            <th>Contacto</th>
-                            <th>Motivo / Intención</th>
-                            <th>Sesiones</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tablaClientesBody">
-                    </tbody>
-                </table>
-            </div>
-            <div id="vacioClientes" class="empty-state" style="display: none;">
-                <span>🌱</span>
-                <p>No hay consultantes registrados aún o no coinciden con la búsqueda.</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- ================= PESTAÑA 4: AGENDA DE PRÓXIMAS CITAS ================= -->
+    <!-- ================= PESTAÑA: AGENDA DE PRÓXIMAS CITAS ================= -->
     <div id="tab-agenda" class="tab-content">
         <div class="card">
             <div class="card-header">
@@ -769,27 +885,33 @@
         </div>
     </div>
 
-    <!-- ================= PESTAÑA 5: EXPORTAR Y BACKUP ================= -->
+    <!-- ================= PESTAÑA: EXPORTAR Y BACKUP ================= -->
     <div id="tab-exportar" class="tab-content">
         <div class="card">
             <div class="card-header">
                 <h2>💾 Exportación de Datos y Copia de Seguridad</h2>
             </div>
             <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">
-                Descarga tu base de datos en formato <strong>CSV</strong> (compatible con Excel y Google Sheets) incluyendo DNI, Fechas de Nacimiento y Edades, o genera un respaldo completo en <strong>JSON</strong> para resguardar tu información de forma segura.
+                Descarga tu base de datos en formato nativo de <strong>Excel (.xlsx)</strong> con hojas organizadas o genera un archivo de respaldo en <strong>JSON</strong> para resguardar toda tu información.
             </p>
 
             <div class="export-box">
                 <div class="export-card">
-                    <h3>📊 Clientes (CSV)</h3>
-                    <p>Lista completa de consultantes con DNI, edad, datos de contacto y motivos.</p>
-                    <button class="btn btn-gold btn-sm" onclick="exportarClientesCSV()">Descargar Clientes CSV</button>
+                    <h3>📑 Libro Completo (Excel)</h3>
+                    <p>Descarga un libro de Excel con 2 hojas: <strong>Consultantes</strong> e <strong>Historial de Sesiones</strong>.</p>
+                    <button class="btn btn-excel btn-sm" onclick="exportarLibroExcel()">📗 Descargar Excel Completo (.xlsx)</button>
                 </div>
 
                 <div class="export-card">
-                    <h3>📜 Sesiones (CSV)</h3>
-                    <p>Registro histórico detallado de todas las sesiones de Reiki y terapias.</p>
-                    <button class="btn btn-gold btn-sm" onclick="exportarSesionesCSV()">Descargar Sesiones CSV</button>
+                    <h3>👥 Clientes (Excel)</h3>
+                    <p>Planilla individual de consultantes con DNI, edad, datos de contacto y motivos.</p>
+                    <button class="btn btn-excel btn-sm" onclick="exportarClientesExcel()">📗 Descargar Clientes (.xlsx)</button>
+                </div>
+
+                <div class="export-card">
+                    <h3>📜 Sesiones (Excel)</h3>
+                    <p>Planilla histórica de todas las sesiones de Reiki y terapias brindadas.</p>
+                    <button class="btn btn-excel btn-sm" onclick="exportarSesionesExcel()">📗 Descargar Sesiones (.xlsx)</button>
                 </div>
 
                 <div class="export-card">
@@ -811,6 +933,9 @@
 </div>
 
 <script>
+    // --- ICONO SVG OFICIAL DE WHATSAPP ---
+    const waSvgIcon = `<svg class="wa-svg" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>`;
+
     // --- UTILIDAD: CÁLCULO DE EDAD ---
     function calcularEdad(fechaNacStr) {
         if (!fechaNacStr) return null;
@@ -891,6 +1016,30 @@
             return nuevoCliente;
         }
 
+        actualizarCliente(id, nombre, dni, fechaNacimiento, telefono, email, motivoConsulta) {
+            const datos = this._leer();
+            const index = datos.clientes.findIndex(c => c.id === id);
+            if (index !== -1) {
+                datos.clientes[index].nombre = nombre.trim();
+                datos.clientes[index].dni = dni ? dni.trim() : '';
+                datos.clientes[index].fechaNacimiento = fechaNacimiento || '';
+                datos.clientes[index].telefono = telefono ? telefono.trim() : '';
+                datos.clientes[index].email = email ? email.trim() : '';
+                datos.clientes[index].motivoConsulta = motivoConsulta ? motivoConsulta.trim() : '';
+                
+                // Actualizar nombre en las sesiones vinculadas
+                datos.sesiones.forEach(s => {
+                    if (s.clienteId === id) {
+                        s.clienteNombre = nombre.trim();
+                    }
+                });
+
+                this._guardar(datos);
+                return datos.clientes[index];
+            }
+            return null;
+        }
+
         eliminarCliente(clienteId) {
             const datos = this._leer();
             datos.clientes = datos.clientes.filter(c => c.id !== clienteId);
@@ -917,12 +1066,33 @@
                 tipoTerapia: tipoTerapia || 'Reiki Usui',
                 fechaSesion: new Date().toISOString(),
                 temasTratados: temasTratados.trim(),
-                evolucion,
+                evolucion: evolucion || 'Inicial',
                 fechaProxima: fechaProxima || null
             };
             datos.sesiones.push(nuevaSesion);
             this._guardar(datos);
             return nuevaSesion;
+        }
+
+        actualizarSesion(id, clienteId, tipoTerapia, temasTratados, evolucion, fechaProxima) {
+            const datos = this._leer();
+            const index = datos.sesiones.findIndex(s => s.id === id);
+            if (index !== -1) {
+                const cliente = this.obtenerClientePorId(clienteId);
+                datos.sesiones[index].clienteId = clienteId;
+                datos.sesiones[index].clienteNombre = cliente ? cliente.nombre : 'Consultante';
+                datos.sesiones[index].tipoTerapia = tipoTerapia;
+                datos.sesiones[index].temasTratados = temasTratados.trim();
+                datos.sesiones[index].evolucion = evolucion || 'Inicial';
+                datos.sesiones[index].fechaProxima = fechaProxima || null;
+                this._guardar(datos);
+                return datos.sesiones[index];
+            }
+            return null;
+        }
+
+        obtenerSesionPorId(id) {
+            return this._leer().sesiones.find(s => s.id === id);
         }
 
         eliminarSesion(sesionId) {
@@ -954,8 +1124,8 @@
         const targetTab = document.getElementById(`tab-${tabName}`);
         if (targetTab) {
             targetTab.classList.add('active');
-            if (tabName === 'historial') aplicarFiltrosHistorial();
             if (tabName === 'clientes') renderizarDirectorio();
+            if (tabName === 'historial') aplicarFiltrosHistorial();
             if (tabName === 'agenda') renderizarAgenda();
         }
     }
@@ -992,9 +1162,30 @@
         document.getElementById('proximasCitasStat').textContent = proximas.length;
     }
 
-    // FORMULARIO CLIENTE
+    // FORMULARIO CLIENTE: ABRIR / CERRAR / GUARDAR / EDITAR
+    function abrirNuevoConsultante() {
+        document.getElementById('editClienteId').value = '';
+        document.getElementById('formCliente').reset();
+        document.getElementById('edadCalculadaBadge').textContent = '';
+        document.getElementById('tituloFormCliente').innerHTML = '🌱 Registrar Nuevo Consultante';
+        document.getElementById('btnSubmitCliente').textContent = 'Guardar Consultante';
+        
+        const formContainer = document.getElementById('contenedorFormCliente');
+        formContainer.style.display = 'block';
+        formContainer.scrollIntoView({ behavior: 'smooth' });
+        document.getElementById('nombre').focus();
+    }
+
+    function ocultarFormularioCliente() {
+        document.getElementById('contenedorFormCliente').style.display = 'none';
+        document.getElementById('editClienteId').value = '';
+        document.getElementById('formCliente').reset();
+        document.getElementById('edadCalculadaBadge').textContent = '';
+    }
+
     document.getElementById('formCliente').addEventListener('submit', (e) => {
         e.preventDefault();
+        const editId = document.getElementById('editClienteId').value;
         const nombre = document.getElementById('nombre').value;
         const dni = document.getElementById('dni').value;
         const fechaNacimiento = document.getElementById('fechaNacimiento').value;
@@ -1002,134 +1193,128 @@
         const email = document.getElementById('email').value;
         const motivo = document.getElementById('motivoConsulta').value;
 
-        db.agregarCliente(nombre, dni, fechaNacimiento, telefono, email, motivo);
-        mostrarNotificacion(`🌸 Consultante "${nombre}" guardado con éxito.`);
-        document.getElementById('formCliente').reset();
-        document.getElementById('edadCalculadaBadge').textContent = '';
+        if (editId) {
+            db.actualizarCliente(editId, nombre, dni, fechaNacimiento, telefono, email, motivo);
+            mostrarNotificacion(`🌸 Consultante "${nombre}" actualizado con éxito.`);
+        } else {
+            db.agregarCliente(nombre, dni, fechaNacimiento, telefono, email, motivo);
+            mostrarNotificacion(`🌸 Consultante "${nombre}" guardado con éxito.`);
+        }
+
+        ocultarFormularioCliente();
         actualizarSelects();
+        renderizarDirectorio();
     });
 
-    // FORMULARIO SESIÓN
+    function editarCliente(id) {
+        const cliente = db.obtenerClientePorId(id);
+        if (!cliente) return;
+
+        document.getElementById('editClienteId').value = cliente.id;
+        document.getElementById('nombre').value = cliente.nombre || '';
+        document.getElementById('dni').value = cliente.dni || '';
+        document.getElementById('fechaNacimiento').value = cliente.fechaNacimiento || '';
+        document.getElementById('telefono').value = cliente.telefono || '';
+        document.getElementById('email').value = cliente.email || '';
+        document.getElementById('motivoConsulta').value = cliente.motivoConsulta || '';
+
+        document.getElementById('tituloFormCliente').innerHTML = `✏️ Editar Consultante: <span style="color:var(--accent-gold);">${cliente.nombre}</span>`;
+        document.getElementById('btnSubmitCliente').textContent = 'Guardar Cambios';
+
+        actualizarCalculoEdadPreview();
+
+        const formContainer = document.getElementById('contenedorFormCliente');
+        formContainer.style.display = 'block';
+        formContainer.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // FORMULARIO SESIÓN: ABRIR / CERRAR / GUARDAR / EDITAR
+    function abrirNuevaSesion() {
+        document.getElementById('editSesionId').value = '';
+        document.getElementById('formSesion').reset();
+        document.getElementById('evolucion').value = 'Inicial';
+        document.getElementById('tituloFormSesion').innerHTML = '✨ Registrar Nueva Sesión';
+        document.getElementById('btnSubmitSesion').textContent = 'Registrar Sesión';
+
+        const formCard = document.getElementById('cardFormSesion');
+        formCard.style.display = 'block';
+        formCard.scrollIntoView({ behavior: 'smooth' });
+        document.getElementById('selectCliente').focus();
+    }
+
+    function ocultarFormularioSesion() {
+        document.getElementById('cardFormSesion').style.display = 'none';
+        document.getElementById('editSesionId').value = '';
+        document.getElementById('formSesion').reset();
+    }
+
+    function iniciarNuevaSesionPara(clienteId) {
+        cambiarPestana('historial');
+        abrirNuevaSesion();
+        const selectCliente = document.getElementById('selectCliente');
+        if (selectCliente) {
+            selectCliente.value = clienteId;
+        }
+        const temas = document.getElementById('temas');
+        if (temas) {
+            temas.focus();
+        }
+        mostrarNotificacion('✨ Listo para registrar la sesión.');
+    }
+
     document.getElementById('formSesion').addEventListener('submit', (e) => {
         e.preventDefault();
+        const editId = document.getElementById('editSesionId').value;
         const clienteId = document.getElementById('selectCliente').value;
         const tipoTerapia = document.getElementById('tipoTerapia').value;
         const temas = document.getElementById('temas').value;
         const evolucion = document.getElementById('evolucion').value;
         const fechaProxima = document.getElementById('fechaProxima').value;
 
-        db.registrarSesion(clienteId, tipoTerapia, temas, evolucion, fechaProxima);
-        mostrarNotificacion(`✨ Sesión de Reiki registrada con éxito.`);
-        document.getElementById('formSesion').reset();
+        if (editId) {
+            db.actualizarSesion(editId, clienteId, tipoTerapia, temas, evolucion, fechaProxima);
+            mostrarNotificacion(`✨ Sesión actualizada con éxito.`);
+        } else {
+            db.registrarSesion(clienteId, tipoTerapia, temas, evolucion, fechaProxima);
+            mostrarNotificacion(`✨ Sesión de Reiki registrada con éxito.`);
+        }
+
+        ocultarFormularioSesion();
+        aplicarFiltrosHistorial();
+        renderizarDirectorio();
     });
 
-    // FILTROS & HISTORIAL
-    function aplicarFiltrosHistorial() {
-        const clienteId = document.getElementById('filtroCliente').value;
-        const evolucion = document.getElementById('filtroEvolucion').value;
-        const texto = document.getElementById('filtroTexto').value.toLowerCase().trim();
-        const desde = document.getElementById('filtroFechaDesde').value;
-        const hasta = document.getElementById('filtroFechaHasta').value;
+    function editarSesion(id) {
+        const sesion = db.obtenerSesionPorId(id);
+        if (!sesion) return;
 
-        let sesiones = db.obtenerSesiones();
-
-        if (clienteId) {
-            sesiones = sesiones.filter(s => s.clienteId === clienteId);
-        }
-        if (evolucion) {
-            sesiones = sesiones.filter(s => s.evolucion === evolucion);
-        }
-        if (texto) {
-            sesiones = sesiones.filter(s => {
-                const cliente = db.obtenerClientePorId(s.clienteId);
-                const dniMatch = cliente && cliente.dni && cliente.dni.toLowerCase().includes(texto);
-                return dniMatch ||
-                    (s.temasTratados && s.temasTratados.toLowerCase().includes(texto)) ||
-                    (s.tipoTerapia && s.tipoTerapia.toLowerCase().includes(texto)) ||
-                    (s.clienteNombre && s.clienteNombre.toLowerCase().includes(texto));
-            });
-        }
-        if (desde) {
-            const d = new Date(desde);
-            sesiones = sesiones.filter(s => new Date(s.fechaSesion) >= d);
-        }
-        if (hasta) {
-            const h = new Date(hasta);
-            h.setHours(23, 59, 59, 999);
-            sesiones = sesiones.filter(s => new Date(s.fechaSesion) <= h);
+        document.getElementById('editSesionId').value = sesion.id;
+        document.getElementById('selectCliente').value = sesion.clienteId;
+        document.getElementById('tipoTerapia').value = sesion.tipoTerapia || 'Reiki Usui';
+        document.getElementById('evolucion').value = sesion.evolucion || 'Inicial';
+        document.getElementById('temas').value = sesion.temasTratados || '';
+        
+        if (sesion.fechaProxima) {
+            const dt = new Date(sesion.fechaProxima);
+            const yyyy = dt.getFullYear();
+            const mm = String(dt.getMonth() + 1).padStart(2, '0');
+            const dd = String(dt.getDate()).padStart(2, '0');
+            const hh = String(dt.getHours()).padStart(2, '0');
+            const min = String(dt.getMinutes()).padStart(2, '0');
+            document.getElementById('fechaProxima').value = `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+        } else {
+            document.getElementById('fechaProxima').value = '';
         }
 
-        const contenedor = document.getElementById('contenedorHistorial');
-        if (sesiones.length === 0) {
-            contenedor.innerHTML = `
-                <div class="empty-state">
-                    <span>🔍</span>
-                    <p>No se encontraron sesiones con los filtros seleccionados.</p>
-                </div>
-            `;
-            return;
-        }
+        document.getElementById('tituloFormSesion').innerHTML = `✏️ Editar Sesión: <span style="color:var(--accent-gold);">${sesion.clienteNombre}</span>`;
+        document.getElementById('btnSubmitSesion').textContent = 'Guardar Cambios de Sesión';
 
-        contenedor.innerHTML = sesiones.map(s => {
-            const cliente = db.obtenerClientePorId(s.clienteId);
-            const badgeClass = s.evolucion === 'Avance' ? 'badge-avance' : (s.evolucion === 'Estable' ? 'badge-estable' : 'badge-retroceso');
-            const cardClass = s.evolucion.toLowerCase();
-            const fechaStr = new Date(s.fechaSesion).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-            const proximaStr = s.fechaProxima ? new Date(s.fechaProxima).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' }) : 'No agendada';
-
-            return `
-                <div class="session-card ${cardClass}">
-                    <div class="session-header">
-                        <div>
-                            <span class="session-client-name">${s.clienteNombre}</span>
-                            ${cliente && cliente.dni ? `<span style="font-size:0.82rem; color:var(--text-muted); margin-left:6px;">(DNI: ${cliente.dni})</span>` : ''}
-                            <span style="font-size:0.8rem; color:var(--text-muted); margin-left:8px;">• ${s.tipoTerapia}</span>
-                        </div>
-                        <span class="badge ${badgeClass}">${s.evolucion}</span>
-                    </div>
-
-                    <div class="session-body">
-                        <strong>🌿 Temas & Observaciones:</strong><br>
-                        ${s.temasTratados.replace(/\n/g, '<br>')}
-                    </div>
-
-                    <div class="session-footer">
-                        <div>
-                            <span>📅 Sesión: <strong>${fechaStr}</strong></span> | 
-                            <span>🕊️ Próxima cita: <strong>${proximaStr}</strong></span>
-                        </div>
-                        <div style="display:flex; gap:6px;">
-                            ${cliente && cliente.telefono ? `
-                                <a class="btn btn-whatsapp btn-sm" target="_blank" href="https://wa.me/${cliente.telefono.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hola ${cliente.nombre}! Te escribo de Alma Raíz. Te recuerdo que tu próxima sesión de Reiki quedó agendada para el ${proximaStr}. Te esperamos con mucho amor! 🌿✨`)}">
-                                    💬 Enviar WhatsApp
-                                </a>
-                            ` : ''}
-                            <button class="btn btn-danger btn-sm" onclick="borrarSesion('${s.id}')">🗑️</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
+        const formCard = document.getElementById('cardFormSesion');
+        formCard.style.display = 'block';
+        formCard.scrollIntoView({ behavior: 'smooth' });
     }
 
-    function limpiarFiltrosHistorial() {
-        document.getElementById('filtroCliente').value = '';
-        document.getElementById('filtroEvolucion').value = '';
-        document.getElementById('filtroTexto').value = '';
-        document.getElementById('filtroFechaDesde').value = '';
-        document.getElementById('filtroFechaHasta').value = '';
-        aplicarFiltrosHistorial();
-    }
-
-    function borrarSesion(id) {
-        if (confirm('¿Estás segura de eliminar este registro de sesión?')) {
-            db.eliminarSesion(id);
-            mostrarNotificacion('Registro de sesión eliminado.');
-            aplicarFiltrosHistorial();
-        }
-    }
-
-    // DIRECTORIO DE CLIENTES
+    // DIRECTORIO DE CLIENTES (TABLA PRINCIPAL)
     function renderizarDirectorio() {
         const query = document.getElementById('buscadorDirectorio').value.toLowerCase().trim();
         let clientes = db.obtenerClientes();
@@ -1184,13 +1369,29 @@
                     </td>
                     <td>
                         <div class="table-actions">
-                            ${c.telefono ? `
-                                <a class="btn btn-whatsapp btn-sm" target="_blank" href="https://wa.me/${c.telefono.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hola ${c.nombre}! Te escribo desde Alma Raíz ✨`)}">
-                                    WhatsApp
-                                </a>
-                            ` : ''}
-                            <button class="btn btn-outline btn-sm" onclick="verHistorialDe('${c.id}')">Ver Historial</button>
-                            <button class="btn btn-danger btn-sm" onclick="borrarCliente('${c.id}', '${c.nombre}')">🗑️</button>
+                            <button class="btn-action-main" onclick="iniciarNuevaSesionPara('${c.id}')" title="Registrar nueva sesión">
+                                ✨ Nueva Sesión
+                            </button>
+                            <div class="table-actions-icons">
+                                ${c.telefono ? `
+                                    <a class="btn-action-icon wa" target="_blank" href="https://wa.me/${c.telefono.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hola ${c.nombre}! Te escribo desde Alma Raíz ✨`)}" title="Enviar WhatsApp">
+                                        ${waSvgIcon}
+                                    </a>
+                                ` : `
+                                    <button class="btn-action-icon wa" style="opacity:0.4; cursor:not-allowed;" title="Sin número de teléfono">
+                                        ${waSvgIcon}
+                                    </button>
+                                `}
+                                <button class="btn-action-icon edit" onclick="editarCliente('${c.id}')" title="Editar consultante">
+                                    ✏️
+                                </button>
+                                <button class="btn-action-icon history" onclick="verHistorialDe('${c.id}')" title="Ver historial de sesiones">
+                                    📜
+                                </button>
+                                <button class="btn-action-icon delete" onclick="borrarCliente('${c.id}', '${c.nombre}')" title="Eliminar consultante">
+                                    🗑️
+                                </button>
+                            </div>
                         </div>
                     </td>
                 </tr>
@@ -1213,7 +1414,126 @@
         }
     }
 
-    // PRÓXIMAS CITAS & AGENDA
+    // FILTROS & HISTORIAL (CON ESTADO INICIAL, BADGES Y EDICIÓN)
+    function aplicarFiltrosHistorial() {
+        const clienteId = document.getElementById('filtroCliente').value;
+        const evolucion = document.getElementById('filtroEvolucion').value;
+        const texto = document.getElementById('filtroTexto').value.toLowerCase().trim();
+        const desde = document.getElementById('filtroFechaDesde').value;
+        const hasta = document.getElementById('filtroFechaHasta').value;
+
+        let sesiones = db.obtenerSesiones();
+
+        if (clienteId) {
+            sesiones = sesiones.filter(s => s.clienteId === clienteId);
+        }
+        if (evolucion) {
+            sesiones = sesiones.filter(s => s.evolucion === evolucion);
+        }
+        if (texto) {
+            sesiones = sesiones.filter(s => {
+                const cliente = db.obtenerClientePorId(s.clienteId);
+                const dniMatch = cliente && cliente.dni && cliente.dni.toLowerCase().includes(texto);
+                return dniMatch ||
+                    (s.temasTratados && s.temasTratados.toLowerCase().includes(texto)) ||
+                    (s.tipoTerapia && s.tipoTerapia.toLowerCase().includes(texto)) ||
+                    (s.clienteNombre && s.clienteNombre.toLowerCase().includes(texto));
+            });
+        }
+        if (desde) {
+            const d = new Date(desde);
+            sesiones = sesiones.filter(s => new Date(s.fechaSesion) >= d);
+        }
+        if (hasta) {
+            const h = new Date(hasta);
+            h.setHours(23, 59, 59, 999);
+            sesiones = sesiones.filter(s => new Date(s.fechaSesion) <= h);
+        }
+
+        const contenedor = document.getElementById('contenedorHistorial');
+        if (sesiones.length === 0) {
+            contenedor.innerHTML = `
+                <div class="empty-state">
+                    <span>🔍</span>
+                    <p>No se encontraron sesiones con los filtros seleccionados.</p>
+                </div>
+            `;
+            return;
+        }
+
+        contenedor.innerHTML = sesiones.map(s => {
+            const cliente = db.obtenerClientePorId(s.clienteId);
+            let badgeClass = 'badge-inicial';
+            let evolucionTexto = s.evolucion || 'Inicial';
+
+            if (s.evolucion === 'Avance') badgeClass = 'badge-avance';
+            else if (s.evolucion === 'Estable') badgeClass = 'badge-estable';
+            else if (s.evolucion === 'Retroceso') badgeClass = 'badge-retroceso';
+            else badgeClass = 'badge-inicial';
+
+            const cardClass = (s.evolucion || 'inicial').toLowerCase();
+            const fechaStr = new Date(s.fechaSesion).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            const proximaStr = s.fechaProxima ? new Date(s.fechaProxima).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' }) : 'No agendada';
+
+            return `
+                <div class="session-card ${cardClass}">
+                    <div class="session-header">
+                        <div>
+                            <span class="session-client-name">${s.clienteNombre}</span>
+                            ${cliente && cliente.dni ? `<span style="font-size:0.82rem; color:var(--text-muted); margin-left:6px;">(DNI: ${cliente.dni})</span>` : ''}
+                            <span style="font-size:0.8rem; color:var(--text-muted); margin-left:8px;">• ${s.tipoTerapia}</span>
+                        </div>
+                        <span class="badge ${badgeClass}">${evolucionTexto === 'Inicial' ? '🌱 Inicial' : evolucionTexto}</span>
+                    </div>
+
+                    <div class="session-body">
+                        <strong>🌿 Temas & Observaciones:</strong><br>
+                        ${s.temasTratados.replace(/\n/g, '<br>')}
+                    </div>
+
+                    <div class="session-footer">
+                        <div>
+                            <span>📅 Sesión: <strong>${fechaStr}</strong></span> | 
+                            <span>🕊️ Próxima cita: <strong>${proximaStr}</strong></span>
+                        </div>
+                        <div style="display:flex; gap:6px; align-items:center;">
+                            ${cliente && cliente.telefono ? `
+                                <a class="btn-action-icon wa" style="width:34px; height:34px; border-radius:7px;" target="_blank" href="https://wa.me/${cliente.telefono.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hola ${cliente.nombre}! Te escribo de Alma Raíz. Te recuerdo que tu próxima sesión de Reiki quedó agendada para el ${proximaStr}. Te esperamos con mucho amor! 🌿✨`)}" title="Enviar recordatorio por WhatsApp">
+                                    ${waSvgIcon}
+                                </a>
+                            ` : ''}
+                            <button class="btn-action-icon edit" style="width:34px; height:34px; border-radius:7px;" onclick="editarSesion('${s.id}')" title="Editar sesión">
+                                ✏️
+                            </button>
+                            <button class="btn-action-icon delete" style="width:34px; height:34px; border-radius:7px;" onclick="borrarSesion('${s.id}')" title="Eliminar sesión">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function limpiarFiltrosHistorial() {
+        document.getElementById('filtroCliente').value = '';
+        document.getElementById('filtroEvolucion').value = '';
+        document.getElementById('filtroTexto').value = '';
+        document.getElementById('filtroFechaDesde').value = '';
+        document.getElementById('filtroFechaHasta').value = '';
+        aplicarFiltrosHistorial();
+    }
+
+    function borrarSesion(id) {
+        if (confirm('¿Estás segura de eliminar este registro de sesión?')) {
+            db.eliminarSesion(id);
+            mostrarNotificacion('Registro de sesión eliminado.');
+            aplicarFiltrosHistorial();
+            renderizarDirectorio();
+        }
+    }
+
+    // PRÓXIMAS CITAS & AGENDA (CON ICONO DE WHATSAPP)
     function renderizarAgenda() {
         const sesiones = db.obtenerSesiones();
         const ahora = new Date();
@@ -1256,8 +1576,8 @@
                     </div>
                     <div>
                         ${cliente && cliente.telefono ? `
-                            <a class="btn btn-whatsapp" target="_blank" href="https://wa.me/${cliente.telefono.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hola ${cliente.nombre}! Te recordamos tu cita de Reiki en Alma Raíz para el día ${fechaCita}. Que tengas un día en mucha paz! 🌸`)}">
-                                💬 Enviar Recordatorio
+                            <a class="btn-action-icon wa" style="width:36px; height:36px; border-radius:8px;" target="_blank" href="https://wa.me/${cliente.telefono.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hola ${cliente.nombre}! Te recordamos tu cita de Reiki en Alma Raíz para el día ${fechaCita}. Que tengas un día en mucha paz! 🌸`)}" title="Enviar recordatorio por WhatsApp">
+                                ${waSvgIcon}
                             </a>
                         ` : '<span style="font-size:0.8rem; color:var(--text-muted);">Sin WhatsApp</span>'}
                     </div>
@@ -1266,7 +1586,126 @@
         }).join('');
     }
 
-    // EXPORTACIÓN A CSV Y BACKUP JSON
+    // ================= EXPORTACIÓN NATIVA A EXCEL (.XLSX) Y BACKUP JSON =================
+    
+    function obtenerDatosClientesParaExcel() {
+        const clientes = db.obtenerClientes();
+        return clientes.map((c, i) => {
+            const edad = calcularEdad(c.fechaNacimiento);
+            const cantSesiones = db.obtenerSesionesPorCliente(c.id).length;
+            const fechaNacFormateada = c.fechaNacimiento ? new Date(c.fechaNacimiento + 'T00:00:00').toLocaleDateString('es-ES') : '';
+            const fechaRegFormateada = c.fechaRegistro ? new Date(c.fechaRegistro).toLocaleDateString('es-ES') : '';
+
+            return {
+                "N°": i + 1,
+                "Nombre Completo": c.nombre || '',
+                "DNI / Documento": c.dni || '',
+                "Fecha de Nacimiento": fechaNacFormateada,
+                "Edad": edad !== null ? edad : '',
+                "WhatsApp / Teléfono": c.telefono || '',
+                "Correo Electrónico": c.email || '',
+                "Motivo Inicial / Intención": c.motivoConsulta || '',
+                "Sesiones Realizadas": cantSesiones,
+                "Fecha de Alta": fechaRegFormateada
+            };
+        });
+    }
+
+    function obtenerDatosSesionesParaExcel() {
+        const sesiones = db.obtenerSesiones();
+        return sesiones.map((s, i) => {
+            const cliente = db.obtenerClientePorId(s.clienteId);
+            const fechaSesionFormateada = new Date(s.fechaSesion).toLocaleString('es-ES');
+            const fechaProximaFormateada = s.fechaProxima ? new Date(s.fechaProxima).toLocaleString('es-ES') : 'No agendada';
+
+            return {
+                "N°": i + 1,
+                "Fecha y Hora": fechaSesionFormateada,
+                "Consultante": s.clienteNombre || '',
+                "DNI Consultante": cliente && cliente.dni ? cliente.dni : '',
+                "Teléfono": cliente && cliente.telefono ? cliente.telefono : '',
+                "Tipo de Terapia": s.tipoTerapia || 'Reiki Usui',
+                "Evolución Energética": s.evolucion || 'Inicial',
+                "Temas y Diagnóstico": s.temasTratados || '',
+                "Próxima Cita": fechaProximaFormateada
+            };
+        });
+    }
+
+    function exportarClientesExcel() {
+        const datos = obtenerDatosClientesParaExcel();
+        if (datos.length === 0) {
+            alert('No hay consultantes registrados para exportar.');
+            return;
+        }
+
+        if (typeof XLSX !== 'undefined') {
+            const hoja = XLSX.utils.json_to_sheet(datos);
+            hoja['!cols'] = [
+                {wch: 5}, {wch: 25}, {wch: 15}, {wch: 18}, {wch: 8}, {wch: 18}, {wch: 25}, {wch: 35}, {wch: 18}, {wch: 15}
+            ];
+            const libro = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(libro, hoja, "Consultantes");
+            XLSX.writeFile(libro, `AlmaRaiz_Clientes_${new Date().toISOString().slice(0,10)}.xlsx`);
+            mostrarNotificacion('📗 Planilla Excel de Clientes descargada.');
+        } else {
+            exportarClientesCSVFallback();
+        }
+    }
+
+    function exportarSesionesExcel() {
+        const datos = obtenerDatosSesionesParaExcel();
+        if (datos.length === 0) {
+            alert('No hay sesiones registradas para exportar.');
+            return;
+        }
+
+        if (typeof XLSX !== 'undefined') {
+            const hoja = XLSX.utils.json_to_sheet(datos);
+            hoja['!cols'] = [
+                {wch: 5}, {wch: 20}, {wch: 25}, {wch: 15}, {wch: 18}, {wch: 22}, {wch: 15}, {wch: 45}, {wch: 20}
+            ];
+            const libro = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(libro, hoja, "Sesiones");
+            XLSX.writeFile(libro, `AlmaRaiz_Sesiones_${new Date().toISOString().slice(0,10)}.xlsx`);
+            mostrarNotificacion('📗 Planilla Excel de Sesiones descargada.');
+        } else {
+            exportarSesionesCSVFallback();
+        }
+    }
+
+    function exportarLibroExcel() {
+        const datosClientes = obtenerDatosClientesParaExcel();
+        const datosSesiones = obtenerDatosSesionesParaExcel();
+
+        if (datosClientes.length === 0 && datosSesiones.length === 0) {
+            alert('No hay datos registrados para exportar.');
+            return;
+        }
+
+        if (typeof XLSX !== 'undefined') {
+            const libro = XLSX.utils.book_new();
+
+            const hojaClientes = XLSX.utils.json_to_sheet(datosClientes.length > 0 ? datosClientes : [{Mensaje: "Sin consultantes"}]);
+            hojaClientes['!cols'] = [
+                {wch: 5}, {wch: 25}, {wch: 15}, {wch: 18}, {wch: 8}, {wch: 18}, {wch: 25}, {wch: 35}, {wch: 18}, {wch: 15}
+            ];
+            XLSX.utils.book_append_sheet(libro, hojaClientes, "Consultantes");
+
+            const hojaSesiones = XLSX.utils.json_to_sheet(datosSesiones.length > 0 ? datosSesiones : [{Mensaje: "Sin sesiones"}]);
+            hojaSesiones['!cols'] = [
+                {wch: 5}, {wch: 20}, {wch: 25}, {wch: 15}, {wch: 18}, {wch: 22}, {wch: 15}, {wch: 45}, {wch: 20}
+            ];
+            XLSX.utils.book_append_sheet(libro, hojaSesiones, "Historial de Sesiones");
+
+            XLSX.writeFile(libro, `AlmaRaiz_LibroCompleto_${new Date().toISOString().slice(0,10)}.xlsx`);
+            mostrarNotificacion('📗 Libro Completo de Excel (.xlsx) descargado.');
+        } else {
+            exportarClientesExcel();
+        }
+    }
+
+    // Descarga de archivos genérica
     function descargarArchivo(contenido, nombreArchivo, tipoMime) {
         const blob = new Blob([contenido], { type: tipoMime });
         const enlace = document.createElement('a');
@@ -1277,58 +1716,35 @@
         document.body.removeChild(enlace);
     }
 
-    function exportarClientesCSV() {
+    function exportarClientesCSVFallback() {
         const clientes = db.obtenerClientes();
-        if (clientes.length === 0) {
-            alert('No hay consultantes para exportar.');
-            return;
-        }
-
         let csv = 'ID,Nombre,DNI,Fecha Nacimiento,Edad,Telefono,Email,Motivo Consulta,Fecha Registro\n';
         clientes.forEach(c => {
             const edad = calcularEdad(c.fechaNacimiento);
             const fila = [
-                `"${c.id}"`,
-                `"${(c.nombre || '').replace(/"/g, '""')}"`,
-                `"${(c.dni || '').replace(/"/g, '""')}"`,
-                `"${c.fechaNacimiento || ''}"`,
-                `"${edad !== null ? edad : ''}"`,
-                `"${(c.telefono || '').replace(/"/g, '""')}"`,
-                `"${(c.email || '').replace(/"/g, '""')}"`,
-                `"${(c.motivoConsulta || '').replace(/"/g, '""')}"`,
-                `"${c.fechaRegistro || ''}"`
+                `"${c.id}"`, `"${(c.nombre || '').replace(/"/g, '""')}"`, `"${(c.dni || '').replace(/"/g, '""')}"`,
+                `"${c.fechaNacimiento || ''}"`, `"${edad !== null ? edad : ''}"`, `"${(c.telefono || '').replace(/"/g, '""')}"`,
+                `"${(c.email || '').replace(/"/g, '""')}"`, `"${(c.motivoConsulta || '').replace(/"/g, '""')}"`, `"${c.fechaRegistro || ''}"`
             ];
             csv += fila.join(',') + '\n';
         });
-
         descargarArchivo("\uFEFF" + csv, `AlmaRaiz_Clientes_${new Date().toISOString().slice(0,10)}.csv`, 'text/csv;charset=utf-8;');
-        mostrarNotificacion('📊 Archivo CSV de Clientes descargado.');
+        mostrarNotificacion('📊 Archivo CSV descargado.');
     }
 
-    function exportarSesionesCSV() {
+    function exportarSesionesCSVFallback() {
         const sesiones = db.obtenerSesiones();
-        if (sesiones.length === 0) {
-            alert('No hay sesiones para exportar.');
-            return;
-        }
-
         let csv = 'ID Sesion,ID Consultante,Nombre Consultante,Tipo Terapia,Fecha Sesion,Evolucion,Temas Tratados,Fecha Proxima Cita\n';
         sesiones.forEach(s => {
             const fila = [
-                `"${s.id}"`,
-                `"${s.clienteId}"`,
-                `"${(s.clienteNombre || '').replace(/"/g, '""')}"`,
-                `"${(s.tipoTerapia || '').replace(/"/g, '""')}"`,
-                `"${s.fechaSesion}"`,
-                `"${s.evolucion}"`,
-                `"${(s.temasTratados || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
-                `"${s.fechaProxima || ''}"`
+                `"${s.id}"`, `"${s.clienteId}"`, `"${(s.clienteNombre || '').replace(/"/g, '""')}"`,
+                `"${(s.tipoTerapia || '').replace(/"/g, '""')}"`, `"${s.fechaSesion}"`, `"${s.evolucion}"`,
+                `"${(s.temasTratados || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`, `"${s.fechaProxima || ''}"`
             ];
             csv += fila.join(',') + '\n';
         });
-
         descargarArchivo("\uFEFF" + csv, `AlmaRaiz_Sesiones_${new Date().toISOString().slice(0,10)}.csv`, 'text/csv;charset=utf-8;');
-        mostrarNotificacion('📊 Archivo CSV de Sesiones descargado.');
+        mostrarNotificacion('📊 Archivo CSV descargado.');
     }
 
     function exportarBackupJSON() {
@@ -1369,6 +1785,7 @@
     // INICIALIZACIÓN
     actualizarSelects();
     actualizarContadores();
+    renderizarDirectorio();
     aplicarFiltrosHistorial();
 </script>
 </body>
