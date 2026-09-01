@@ -8,8 +8,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,400&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <!-- SheetJS para exportación nativa a Excel (.xlsx) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <!-- Firebase App & Firestore SDKs (Compatibilidad Web v8) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
     <style>
         :root {
             --primary: #684128;        /* Tono raíz / tierra noble */
@@ -50,12 +56,13 @@
         /* HEADER BRANDING */
         header {
             text-align: center;
-            margin-bottom: 28px;
+            margin-bottom: 24px;
             padding: 20px;
             background: linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(247,239,231,0.7) 100%);
             border-radius: var(--radius);
             box-shadow: var(--shadow);
             border: 1px solid var(--border);
+            position: relative;
         }
 
         .logo-container {
@@ -100,6 +107,45 @@
             font-size: 0.85rem;
             color: var(--text-muted);
             font-style: italic;
+        }
+
+        /* CLOUD SYNC STATUS BADGE */
+        .cloud-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 10px;
+        }
+
+        .cloud-badge:hover {
+            border-color: var(--accent-gold);
+            background: var(--primary-light);
+        }
+
+        .cloud-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background-color: #9e9e9e;
+        }
+
+        .cloud-dot.online { background-color: #2e7d32; box-shadow: 0 0 6px #4caf50; }
+        .cloud-dot.syncing { background-color: #f57f17; animation: pulse 1s infinite; }
+        .cloud-dot.offline { background-color: #9e9e9e; }
+
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 0.7; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.7; }
         }
 
         /* STATS COUNTERS */
@@ -585,7 +631,7 @@
         }
 
         /* FORMULARIOS DESPLEGABLES / MODAL */
-        #contenedorFormCliente, #cardFormSesion {
+        #contenedorFormCliente, #cardFormSesion, #cardConfigNube {
             display: none;
             animation: fadeIn 0.25s ease;
             border: 2px solid var(--accent-gold);
@@ -646,10 +692,45 @@
         <h1 class="brand-title">Alma Raíz</h1>
         <div class="brand-subtitle">SESIONES DE REIKI &bull; TERAPIAS HOLÍSTICAS</div>
         <div class="brand-motto">Energía &bull; Equilibrio &bull; Sanación</div>
+        
+        <!-- INDICADOR DE BASE DE DATOS EN LA NUBE -->
+        <div>
+            <button type="button" class="cloud-badge" onclick="abrirConfigNube()" title="Configurar conexión en la nube">
+                <span class="cloud-dot" id="cloudDot"></span>
+                <span id="cloudStatusText">Base de Datos: Modo Local</span> ⚙️
+            </button>
+        </div>
     </header>
 
     <!-- NOTIFICACIÓN DE ÉXITO -->
     <div id="notificacion">✨ Acción realizada con éxito</div>
+
+    <!-- PANEL DE CONFIGURACIÓN DE NUBE / FIREBASE -->
+    <div class="card" id="cardConfigNube" style="max-width: 850px; margin: 0 auto 24px;">
+        <div class="card-header">
+            <h2>☁️ Conexión de Base de Datos en la Nube (Firebase)</h2>
+            <button type="button" class="btn btn-outline btn-sm" onclick="cerrarConfigNube()">✖ Cerrar</button>
+        </div>
+        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 15px;">
+            Al conectar tu proyecto gratuito de Firebase, todos tus consultantes y sesiones se sincronizarán en tiempo real en la nube, permitiéndote acceder desde tu celular, tablet o computadora con total seguridad.
+        </p>
+        <form id="formFirebaseConfig">
+            <label for="inputFirebaseConfig">Pega aquí el objeto de configuración <code>firebaseConfig</code> o JSON:</label>
+            <textarea id="inputFirebaseConfig" rows="7" placeholder='const firebaseConfig = {
+  apiKey: "AIzaSy...",
+  authDomain: "almaraiz-....firebaseapp.com",
+  projectId: "almaraiz-...",
+  storageBucket: "almaraiz-....appspot.com",
+  messagingSenderId: "...",
+  appId: "..."
+};'></textarea>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button type="submit" class="btn btn-green" style="width: auto;">💾 Guardar y Conectar Nube</button>
+                <button type="button" class="btn btn-outline" style="width: auto;" onclick="desconectarNube()">Desconectar (Usar Modo Local)</button>
+                <button type="button" class="btn btn-outline" style="width: auto;" onclick="sincronizarManualmente()">🔄 Sincronizar Ahora</button>
+            </div>
+        </form>
+    </div>
 
     <!-- BARRA DE ESTADÍSTICAS RÁPIDAS -->
     <div class="stats-bar">
@@ -966,12 +1047,16 @@
         }
     }
 
-    // --- CAPA DE DATOS CON LOCALSTORAGE ---
+    // --- CAPA DE DATOS HÍBRIDA (FIREBASE CLOUD + LOCALSTORAGE) ---
     class AlmaRaizDB {
         constructor() {
             this.dbKey = 'almaraiz_crm_data';
             this.legacyKey = 'holistic_crm_data';
+            this.configKey = 'almaraiz_firebase_config';
+            this.firestore = null;
+            this.isCloudActive = false;
             this.iniciarDB();
+            this.iniciarFirebase();
         }
 
         iniciarDB() {
@@ -983,6 +1068,60 @@
                     localStorage.setItem(this.dbKey, JSON.stringify({ clientes: [], sesiones: [] }));
                 }
             }
+        }
+
+        iniciarFirebase() {
+            try {
+                const configRaw = localStorage.getItem(this.configKey);
+                if (configRaw && typeof firebase !== 'undefined') {
+                    const config = JSON.parse(configRaw);
+                    if (config && config.apiKey) {
+                        if (!firebase.apps.length) {
+                            firebase.initializeApp(config);
+                        }
+                        this.firestore = firebase.firestore();
+                        this.isCloudActive = true;
+                        actualizarEstadoNubeUI('online', 'Nube Conectada (Firestore)');
+                        this.escucharCambiosNube();
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.warn('Error inicializando Firebase:', e);
+            }
+            this.isCloudActive = false;
+            actualizarEstadoNubeUI('offline', 'Modo Local');
+        }
+
+        escucharCambiosNube() {
+            if (!this.firestore) return;
+            // Sincronizar clientes en tiempo real
+            this.firestore.collection('clientes').onSnapshot(snapshot => {
+                const clientes = [];
+                snapshot.forEach(doc => clientes.push({ id: doc.id, ...doc.data() }));
+                const datos = this._leer();
+                if (snapshot.size > 0 || (datos.clientes.length === 0 && snapshot.size === 0)) {
+                    datos.clientes = clientes;
+                    localStorage.setItem(this.dbKey, JSON.stringify(datos));
+                    actualizarSelects();
+                    actualizarContadores();
+                    renderizarDirectorio();
+                }
+            }, err => console.warn('Error escuchando clientes:', err));
+
+            // Sincronizar sesiones en tiempo real
+            this.firestore.collection('sesiones').onSnapshot(snapshot => {
+                const sesiones = [];
+                snapshot.forEach(doc => sesiones.push({ id: doc.id, ...doc.data() }));
+                const datos = this._leer();
+                if (snapshot.size > 0 || (datos.sesiones.length === 0 && snapshot.size === 0)) {
+                    datos.sesiones = sesiones;
+                    localStorage.setItem(this.dbKey, JSON.stringify(datos));
+                    actualizarContadores();
+                    aplicarFiltrosHistorial();
+                    renderizarAgenda();
+                }
+            }, err => console.warn('Error escuchando sesiones:', err));
         }
 
         _leer() {
@@ -999,8 +1138,7 @@
         }
 
         // CLIENTES
-        agregarCliente(nombre, dni, fechaNacimiento, telefono, email, motivoConsulta) {
-            const datos = this._leer();
+        async agregarCliente(nombre, dni, fechaNacimiento, telefono, email, motivoConsulta) {
             const nuevoCliente = {
                 id: Date.now().toString(),
                 nombre: nombre.trim(),
@@ -1011,12 +1149,24 @@
                 motivoConsulta: motivoConsulta ? motivoConsulta.trim() : '',
                 fechaRegistro: new Date().toISOString()
             };
+
+            const datos = this._leer();
             datos.clientes.push(nuevoCliente);
             this._guardar(datos);
+
+            if (this.firestore && this.isCloudActive) {
+                actualizarEstadoNubeUI('syncing', 'Sincronizando...');
+                try {
+                    await this.firestore.collection('clientes').doc(nuevoCliente.id).set(nuevoCliente);
+                    actualizarEstadoNubeUI('online', 'Nube Sincronizada');
+                } catch (e) {
+                    console.warn('Error al guardar cliente en nube:', e);
+                }
+            }
             return nuevoCliente;
         }
 
-        actualizarCliente(id, nombre, dni, fechaNacimiento, telefono, email, motivoConsulta) {
+        async actualizarCliente(id, nombre, dni, fechaNacimiento, telefono, email, motivoConsulta) {
             const datos = this._leer();
             const index = datos.clientes.findIndex(c => c.id === id);
             if (index !== -1) {
@@ -1027,7 +1177,6 @@
                 datos.clientes[index].email = email ? email.trim() : '';
                 datos.clientes[index].motivoConsulta = motivoConsulta ? motivoConsulta.trim() : '';
                 
-                // Actualizar nombre en las sesiones vinculadas
                 datos.sesiones.forEach(s => {
                     if (s.clienteId === id) {
                         s.clienteNombre = nombre.trim();
@@ -1035,16 +1184,36 @@
                 });
 
                 this._guardar(datos);
+
+                if (this.firestore && this.isCloudActive) {
+                    actualizarEstadoNubeUI('syncing', 'Sincronizando...');
+                    try {
+                        await this.firestore.collection('clientes').doc(id).set(datos.clientes[index]);
+                        actualizarEstadoNubeUI('online', 'Nube Sincronizada');
+                    } catch (e) {
+                        console.warn('Error al actualizar cliente en nube:', e);
+                    }
+                }
                 return datos.clientes[index];
             }
             return null;
         }
 
-        eliminarCliente(clienteId) {
+        async eliminarCliente(clienteId) {
             const datos = this._leer();
             datos.clientes = datos.clientes.filter(c => c.id !== clienteId);
             datos.sesiones = datos.sesiones.filter(s => s.clienteId !== clienteId);
             this._guardar(datos);
+
+            if (this.firestore && this.isCloudActive) {
+                actualizarEstadoNubeUI('syncing', 'Sincronizando...');
+                try {
+                    await this.firestore.collection('clientes').doc(clienteId).delete();
+                    actualizarEstadoNubeUI('online', 'Nube Sincronizada');
+                } catch (e) {
+                    console.warn('Error al eliminar cliente de nube:', e);
+                }
+            }
         }
 
         obtenerClientes() {
@@ -1056,8 +1225,7 @@
         }
 
         // SESIONES
-        registrarSesion(clienteId, tipoTerapia, temasTratados, evolucion, fechaProxima) {
-            const datos = this._leer();
+        async registrarSesion(clienteId, tipoTerapia, temasTratados, evolucion, fechaProxima) {
             const cliente = this.obtenerClientePorId(clienteId);
             const nuevaSesion = {
                 id: Date.now().toString(),
@@ -1069,12 +1237,24 @@
                 evolucion: evolucion || 'Inicial',
                 fechaProxima: fechaProxima || null
             };
+
+            const datos = this._leer();
             datos.sesiones.push(nuevaSesion);
             this._guardar(datos);
+
+            if (this.firestore && this.isCloudActive) {
+                actualizarEstadoNubeUI('syncing', 'Sincronizando...');
+                try {
+                    await this.firestore.collection('sesiones').doc(nuevaSesion.id).set(nuevaSesion);
+                    actualizarEstadoNubeUI('online', 'Nube Sincronizada');
+                } catch (e) {
+                    console.warn('Error al registrar sesión en nube:', e);
+                }
+            }
             return nuevaSesion;
         }
 
-        actualizarSesion(id, clienteId, tipoTerapia, temasTratados, evolucion, fechaProxima) {
+        async actualizarSesion(id, clienteId, tipoTerapia, temasTratados, evolucion, fechaProxima) {
             const datos = this._leer();
             const index = datos.sesiones.findIndex(s => s.id === id);
             if (index !== -1) {
@@ -1086,6 +1266,16 @@
                 datos.sesiones[index].evolucion = evolucion || 'Inicial';
                 datos.sesiones[index].fechaProxima = fechaProxima || null;
                 this._guardar(datos);
+
+                if (this.firestore && this.isCloudActive) {
+                    actualizarEstadoNubeUI('syncing', 'Sincronizando...');
+                    try {
+                        await this.firestore.collection('sesiones').doc(id).set(datos.sesiones[index]);
+                        actualizarEstadoNubeUI('online', 'Nube Sincronizada');
+                    } catch (e) {
+                        console.warn('Error al actualizar sesión en nube:', e);
+                    }
+                }
                 return datos.sesiones[index];
             }
             return null;
@@ -1095,10 +1285,20 @@
             return this._leer().sesiones.find(s => s.id === id);
         }
 
-        eliminarSesion(sesionId) {
+        async eliminarSesion(sesionId) {
             const datos = this._leer();
             datos.sesiones = datos.sesiones.filter(s => s.id !== sesionId);
             this._guardar(datos);
+
+            if (this.firestore && this.isCloudActive) {
+                actualizarEstadoNubeUI('syncing', 'Sincronizando...');
+                try {
+                    await this.firestore.collection('sesiones').doc(sesionId).delete();
+                    actualizarEstadoNubeUI('online', 'Nube Sincronizada');
+                } catch (e) {
+                    console.warn('Error al eliminar sesión de nube:', e);
+                }
+            }
         }
 
         obtenerSesiones() {
@@ -1108,11 +1308,109 @@
         obtenerSesionesPorCliente(clienteId) {
             return this.obtenerSesiones().filter(s => s.clienteId === clienteId);
         }
+
+        async sincronizarTodoALaNube() {
+            if (!this.firestore) return false;
+            const datos = this._leer();
+            actualizarEstadoNubeUI('syncing', 'Subiendo datos a la nube...');
+            
+            const batch = this.firestore.batch();
+            datos.clientes.forEach(c => {
+                const ref = this.firestore.collection('clientes').doc(c.id);
+                batch.set(ref, c);
+            });
+            datos.sesiones.forEach(s => {
+                const ref = this.firestore.collection('sesiones').doc(s.id);
+                batch.set(ref, s);
+            });
+            await batch.commit();
+            actualizarEstadoNubeUI('online', 'Nube Sincronizada');
+            return true;
+        }
     }
 
     // --- INSTANCIA Y ELEMENTOS ---
     const db = new AlmaRaizDB();
     const notificacion = document.getElementById('notificacion');
+
+    // UI DE ESTADO DE LA NUBE
+    function actualizarEstadoNubeUI(estado, texto) {
+        const dot = document.getElementById('cloudDot');
+        const label = document.getElementById('cloudStatusText');
+        if (dot && label) {
+            dot.className = `cloud-dot ${estado}`;
+            label.textContent = texto;
+        }
+    }
+
+    function abrirConfigNube() {
+        const panel = document.getElementById('cardConfigNube');
+        const configRaw = localStorage.getItem('almaraiz_firebase_config');
+        if (configRaw) {
+            document.getElementById('inputFirebaseConfig').value = configRaw;
+        }
+        panel.style.display = 'block';
+        panel.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function cerrarConfigNube() {
+        document.getElementById('cardConfigNube').style.display = 'none';
+    }
+
+    document.getElementById('formFirebaseConfig').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const texto = document.getElementById('inputFirebaseConfig').value.trim();
+        try {
+            let configObj = null;
+            if (texto.startsWith('{')) {
+                configObj = JSON.parse(texto);
+            } else {
+                // Intentar extraer el bloque objeto
+                const match = texto.match(/\{[\s\S]*\}/);
+                if (match) {
+                    // Reemplazar llaves sin comillas por json válido
+                    const formatted = match[0].replace(/([a-zA-Z0-9_]+)\s*:/g, '"$1":');
+                    configObj = JSON.parse(formatted);
+                }
+            }
+
+            if (configObj && configObj.apiKey) {
+                localStorage.setItem('almaraiz_firebase_config', JSON.stringify(configObj));
+                db.iniciarFirebase();
+                await db.sincronizarTodoALaNube();
+                mostrarNotificacion('☁️ ¡Conexión con Firebase establecida exitosamente!');
+                cerrarConfigNube();
+            } else {
+                alert('No se detectó una configuración válida con apiKey. Revisa el texto pegado.');
+            }
+        } catch (err) {
+            alert('Error al interpretar la configuración: ' + err.message);
+        }
+    });
+
+    function desconectarNube() {
+        if (confirm('¿Deseas desconectar Firebase y trabajar únicamente en modo local?')) {
+            localStorage.removeItem('almaraiz_firebase_config');
+            db.firestore = null;
+            db.isCloudActive = false;
+            actualizarEstadoNubeUI('offline', 'Modo Local');
+            mostrarNotificacion('Se ha cambiado al modo de almacenamiento local.');
+            cerrarConfigNube();
+        }
+    }
+
+    async function sincronizarManualmente() {
+        if (db.firestore && db.isCloudActive) {
+            try {
+                await db.sincronizarTodoALaNube();
+                mostrarNotificacion('✅ Sincronización completa con la nube.');
+            } catch (err) {
+                alert('Error al sincronizar: ' + err.message);
+            }
+        } else {
+            alert('Primero debes configurar y conectar Firebase.');
+        }
+    }
 
     function cambiarPestana(tabName) {
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -1183,7 +1481,7 @@
         document.getElementById('edadCalculadaBadge').textContent = '';
     }
 
-    document.getElementById('formCliente').addEventListener('submit', (e) => {
+    document.getElementById('formCliente').addEventListener('submit', async (e) => {
         e.preventDefault();
         const editId = document.getElementById('editClienteId').value;
         const nombre = document.getElementById('nombre').value;
@@ -1194,10 +1492,10 @@
         const motivo = document.getElementById('motivoConsulta').value;
 
         if (editId) {
-            db.actualizarCliente(editId, nombre, dni, fechaNacimiento, telefono, email, motivo);
+            await db.actualizarCliente(editId, nombre, dni, fechaNacimiento, telefono, email, motivo);
             mostrarNotificacion(`🌸 Consultante "${nombre}" actualizado con éxito.`);
         } else {
-            db.agregarCliente(nombre, dni, fechaNacimiento, telefono, email, motivo);
+            await db.agregarCliente(nombre, dni, fechaNacimiento, telefono, email, motivo);
             mostrarNotificacion(`🌸 Consultante "${nombre}" guardado con éxito.`);
         }
 
@@ -1262,7 +1560,7 @@
         mostrarNotificacion('✨ Listo para registrar la sesión.');
     }
 
-    document.getElementById('formSesion').addEventListener('submit', (e) => {
+    document.getElementById('formSesion').addEventListener('submit', async (e) => {
         e.preventDefault();
         const editId = document.getElementById('editSesionId').value;
         const clienteId = document.getElementById('selectCliente').value;
@@ -1272,10 +1570,10 @@
         const fechaProxima = document.getElementById('fechaProxima').value;
 
         if (editId) {
-            db.actualizarSesion(editId, clienteId, tipoTerapia, temas, evolucion, fechaProxima);
+            await db.actualizarSesion(editId, clienteId, tipoTerapia, temas, evolucion, fechaProxima);
             mostrarNotificacion(`✨ Sesión actualizada con éxito.`);
         } else {
-            db.registrarSesion(clienteId, tipoTerapia, temas, evolucion, fechaProxima);
+            await db.registrarSesion(clienteId, tipoTerapia, temas, evolucion, fechaProxima);
             mostrarNotificacion(`✨ Sesión de Reiki registrada con éxito.`);
         }
 
@@ -1405,9 +1703,9 @@
         aplicarFiltrosHistorial();
     }
 
-    function borrarCliente(id, nombre) {
+    async function borrarCliente(id, nombre) {
         if (confirm(`¿Segura que deseas eliminar a "${nombre}" y todo su historial de sesiones?`)) {
-            db.eliminarCliente(id);
+            await db.eliminarCliente(id);
             mostrarNotificacion(`Consultante "${nombre}" eliminado.`);
             actualizarSelects();
             renderizarDirectorio();
@@ -1524,9 +1822,9 @@
         aplicarFiltrosHistorial();
     }
 
-    function borrarSesion(id) {
+    async function borrarSesion(id) {
         if (confirm('¿Estás segura de eliminar este registro de sesión?')) {
-            db.eliminarSesion(id);
+            await db.eliminarSesion(id);
             mostrarNotificacion('Registro de sesión eliminado.');
             aplicarFiltrosHistorial();
             renderizarDirectorio();
