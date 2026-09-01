@@ -666,6 +666,141 @@
             background: #fffdfb;
         }
 
+        /* CALENDARIO INTERACTIVO DE CITAS */
+        .calendar-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .calendar-month-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.65rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: capitalize;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            background: #faf8f5;
+            padding: 12px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+        }
+
+        .calendar-day-header {
+            text-align: center;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            padding: 8px 4px;
+        }
+
+        .calendar-day-cell {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            min-height: 88px;
+            padding: 6px;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .calendar-day-cell:hover {
+            border-color: var(--accent-gold);
+            box-shadow: 0 4px 10px rgba(104, 65, 40, 0.08);
+            transform: translateY(-1px);
+        }
+
+        .calendar-day-cell.other-month {
+            background: #fbf9f6;
+            opacity: 0.45;
+            cursor: default;
+        }
+
+        .calendar-day-cell.today {
+            border: 2px solid var(--accent-gold);
+            background: #fffdf8;
+        }
+
+        .calendar-day-cell.selected-day {
+            border: 2px solid var(--primary);
+            background: var(--primary-light);
+        }
+
+        .calendar-day-number {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 4px;
+        }
+
+        .calendar-day-cell.today .calendar-day-number {
+            color: var(--accent-gold);
+        }
+
+        .calendar-chip {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 2px 5px;
+            border-radius: 4px;
+            margin-bottom: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block;
+        }
+
+        .calendar-chip.chip-more {
+            background: var(--primary-light);
+            color: var(--primary);
+            border: 1px solid var(--border);
+            text-align: center;
+            font-size: 0.68rem;
+        }
+
+        .calendar-details-card {
+            margin-top: 16px;
+            padding: 18px;
+            background: #ffffff;
+            border: 1.5px solid var(--accent-gold);
+            border-radius: 10px;
+            animation: fadeIn 0.2s ease;
+            box-shadow: 0 4px 12px rgba(198, 147, 75, 0.1);
+        }
+
+        @media (max-width: 650px) {
+            .calendar-grid {
+                gap: 3px;
+                padding: 6px;
+            }
+            .calendar-day-cell {
+                min-height: 58px;
+                padding: 3px;
+            }
+            .calendar-day-header {
+                font-size: 0.68rem;
+                padding: 4px 2px;
+            }
+            .calendar-chip {
+                font-size: 0.62rem;
+                padding: 1px 3px;
+            }
+        }
+
         /* BACKUP SECTION */
         .export-box {
             display: grid;
@@ -991,9 +1126,39 @@
     <div id="tab-agenda" class="tab-content">
         <div class="card">
             <div class="card-header">
-                <h2>📅 Próximas Citas y Recordatorios</h2>
+                <h2>📅 Próximas Citas y Agenda</h2>
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <button class="btn btn-sm btn-gold" id="btnVistaLista" onclick="cambiarVistaAgenda('lista')">
+                        📋 Vista Lista
+                    </button>
+                    <button class="btn btn-sm btn-outline" id="btnVistaCalendario" onclick="cambiarVistaAgenda('calendario')">
+                        🗓️ Vista Calendario
+                    </button>
+                </div>
             </div>
-            <div id="contenedorAgenda"></div>
+
+            <!-- VISTA 1: LISTADO ESTÁNDAR -->
+            <div id="vistaAgendaLista">
+                <div id="contenedorAgenda"></div>
+            </div>
+
+            <!-- VISTA 2: CALENDARIO MENSUAL INTERACTIVO -->
+            <div id="vistaAgendaCalendario" style="display: none;">
+                <div class="calendar-controls">
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button type="button" class="btn btn-outline btn-sm" onclick="navegarMes(-1)">◀ Anterior</button>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="irMesHoy()">Hoy</button>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="navegarMes(1)">Siguiente ▶</button>
+                    </div>
+                    <div class="calendar-month-title" id="tituloMesCalendario">Septiembre 2026</div>
+                </div>
+
+                <!-- Grilla del Calendario -->
+                <div class="calendar-grid" id="gridCalendario"></div>
+
+                <!-- Detalle del día seleccionado -->
+                <div id="detalleDiaCalendario" style="display: none;"></div>
+            </div>
         </div>
     </div>
 
@@ -1201,7 +1366,11 @@
                     localStorage.setItem(this.dbKey, JSON.stringify(datos));
                     actualizarContadores();
                     aplicarFiltrosHistorial();
-                    renderizarAgenda();
+                    if (vistaAgendaActiva === 'calendario') {
+                        renderizarCalendario();
+                    } else {
+                        renderizarAgenda();
+                    }
                 }
             }, err => console.warn('Aviso conexión Firestore sesiones:', err));
         }
@@ -1507,7 +1676,13 @@
             targetTab.classList.add('active');
             if (tabName === 'clientes') renderizarDirectorio();
             if (tabName === 'historial') aplicarFiltrosHistorial();
-            if (tabName === 'agenda') renderizarAgenda();
+            if (tabName === 'agenda') {
+                if (vistaAgendaActiva === 'calendario') {
+                    renderizarCalendario();
+                } else {
+                    renderizarAgenda();
+                }
+            }
         }
     }
 
@@ -1663,6 +1838,11 @@
         ocultarFormularioSesion();
         aplicarFiltrosHistorial();
         renderizarDirectorio();
+        if (vistaAgendaActiva === 'calendario') {
+            renderizarCalendario();
+        } else {
+            renderizarAgenda();
+        }
     });
 
     function editarSesion(id) {
@@ -1913,10 +2093,228 @@
             mostrarNotificacion('Registro de sesión eliminado.');
             aplicarFiltrosHistorial();
             renderizarDirectorio();
+            if (vistaAgendaActiva === 'calendario') {
+                renderizarCalendario();
+            }
         }
     }
 
-    // PRÓXIMAS CITAS & AGENDA (CON ICONO DE WHATSAPP)
+    // ================= AGENDA & CALENDARIO INTERACTIVO =================
+    let mesActualCalendario = new Date();
+    let diaSeleccionadoCalendario = null;
+    let vistaAgendaActiva = 'lista';
+
+    function cambiarVistaAgenda(tipo) {
+        vistaAgendaActiva = tipo;
+        const btnLista = document.getElementById('btnVistaLista');
+        const btnCal = document.getElementById('btnVistaCalendario');
+        const vistaLista = document.getElementById('vistaAgendaLista');
+        const vistaCal = document.getElementById('vistaAgendaCalendario');
+
+        if (tipo === 'lista') {
+            btnLista.className = 'btn btn-sm btn-gold';
+            btnCal.className = 'btn btn-sm btn-outline';
+            vistaLista.style.display = 'block';
+            vistaCal.style.display = 'none';
+            renderizarAgenda();
+        } else {
+            btnLista.className = 'btn btn-sm btn-outline';
+            btnCal.className = 'btn btn-sm btn-gold';
+            vistaLista.style.display = 'none';
+            vistaCal.style.display = 'block';
+            renderizarCalendario();
+        }
+    }
+
+    function navegarMes(offset) {
+        mesActualCalendario.setMonth(mesActualCalendario.getMonth() + offset);
+        renderizarCalendario();
+    }
+
+    function irMesHoy() {
+        mesActualCalendario = new Date();
+        diaSeleccionadoCalendario = null;
+        renderizarCalendario();
+    }
+
+    function renderizarCalendario() {
+        const contenedor = document.getElementById('gridCalendario');
+        const tituloMes = document.getElementById('tituloMesCalendario');
+        
+        if (!contenedor || !tituloMes) return;
+
+        const año = mesActualCalendario.getFullYear();
+        const mes = mesActualCalendario.getMonth();
+
+        const nombreMes = new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' }).format(mesActualCalendario);
+        tituloMes.textContent = nombreMes;
+
+        const sesiones = db.obtenerSesiones();
+        const citasConFecha = sesiones.filter(s => s.fechaProxima);
+
+        const primerDiaMes = new Date(año, mes, 1);
+        const ultimoDiaMes = new Date(año, mes + 1, 0);
+        
+        let diaSemanaPrimerDia = primerDiaMes.getDay() - 1;
+        if (diaSemanaPrimerDia === -1) diaSemanaPrimerDia = 6;
+
+        const hoy = new Date();
+        const hoyStr = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}`;
+
+        let html = `
+            <div class="calendar-day-header">Lun</div>
+            <div class="calendar-day-header">Mar</div>
+            <div class="calendar-day-header">Mié</div>
+            <div class="calendar-day-header">Jue</div>
+            <div class="calendar-day-header">Vie</div>
+            <div class="calendar-day-header">Sáb</div>
+            <div class="calendar-day-header">Dom</div>
+        `;
+
+        // Días del mes anterior para rellenar
+        const ultimoDiaMesAnterior = new Date(año, mes, 0).getDate();
+        for (let i = diaSemanaPrimerDia - 1; i >= 0; i--) {
+            const d = ultimoDiaMesAnterior - i;
+            html += `<div class="calendar-day-cell other-month"><div class="calendar-day-number">${d}</div></div>`;
+        }
+
+        // Días del mes actual
+        for (let d = 1; d <= ultimoDiaMes.getDate(); d++) {
+            const fechaStr = `${año}-${String(mes + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const esHoy = fechaStr === hoyStr;
+            const esSeleccionado = diaSeleccionadoCalendario === fechaStr;
+            
+            const citasDelDia = citasConFecha.filter(s => {
+                const dt = new Date(s.fechaProxima);
+                const dtStr = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+                return dtStr === fechaStr;
+            }).sort((a,b) => new Date(a.fechaProxima) - new Date(b.fechaProxima));
+
+            let chipsHtml = '';
+            if (citasDelDia.length > 0) {
+                citasDelDia.slice(0, 2).forEach(c => {
+                    const hora = new Date(c.fechaProxima).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                    chipsHtml += `<span class="calendar-chip" title="${hora} - ${c.clienteNombre} (${c.tipoTerapia})">${hora} ${c.clienteNombre}</span>`;
+                });
+                if (citasDelDia.length > 2) {
+                    chipsHtml += `<span class="calendar-chip chip-more">+${citasDelDia.length - 2} más</span>`;
+                }
+            }
+
+            html += `
+                <div class="calendar-day-cell ${esHoy ? 'today' : ''} ${esSeleccionado ? 'selected-day' : ''}" onclick="seleccionarDiaCalendario('${fechaStr}')">
+                    <div class="calendar-day-number">${d}</div>
+                    ${chipsHtml}
+                </div>
+            `;
+        }
+
+        // Días del siguiente mes para completar la cuadrícula (múltiplo de 7)
+        const celdasTotales = diaSemanaPrimerDia + ultimoDiaMes.getDate();
+        const celdasRestantes = (7 - (celdasTotales % 7)) % 7;
+        for (let i = 1; i <= celdasRestantes; i++) {
+            html += `<div class="calendar-day-cell other-month"><div class="calendar-day-number">${i}</div></div>`;
+        }
+
+        contenedor.innerHTML = html;
+        renderizarDetalleDia();
+    }
+
+    function seleccionarDiaCalendario(fechaStr) {
+        diaSeleccionadoCalendario = fechaStr;
+        renderizarCalendario();
+    }
+
+    function renderizarDetalleDia() {
+        const detalle = document.getElementById('detalleDiaCalendario');
+        if (!detalle) return;
+
+        if (!diaSeleccionadoCalendario) {
+            detalle.innerHTML = '';
+            detalle.style.display = 'none';
+            return;
+        }
+
+        const sesiones = db.obtenerSesiones();
+        const citasDelDia = sesiones.filter(s => {
+            if (!s.fechaProxima) return false;
+            const dt = new Date(s.fechaProxima);
+            const dtStr = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+            return dtStr === diaSeleccionadoCalendario;
+        }).sort((a,b) => new Date(a.fechaProxima) - new Date(b.fechaProxima));
+
+        const fechaFormateada = new Date(diaSeleccionadoCalendario + 'T00:00:00').toLocaleDateString('es-ES', { 
+            weekday: 'long', 
+            day: '2-digit', 
+            month: 'long', 
+            year: 'numeric' 
+        });
+
+        if (citasDelDia.length === 0) {
+            detalle.style.display = 'block';
+            detalle.innerHTML = `
+                <div class="calendar-details-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <h3 style="font-family:'Cormorant Garamond',serif; color:var(--primary); font-size:1.25rem;">
+                            📅 ${fechaFormateada}
+                        </h3>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="cerrarDetalleDia()">✖</button>
+                    </div>
+                    <p style="color:var(--text-muted); font-size:0.88rem;">No hay citas agendadas para este día.</p>
+                </div>
+            `;
+            return;
+        }
+
+        detalle.style.display = 'block';
+        detalle.innerHTML = `
+            <div class="calendar-details-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+                    <h3 style="font-family:'Cormorant Garamond',serif; color:var(--primary); font-size:1.3rem;">
+                        📅 Citas para: ${fechaFormateada} (${citasDelDia.length})
+                    </h3>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="cerrarDetalleDia()">✖ Cerrar Detalle</button>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    ${citasDelDia.map(s => {
+                        const cliente = db.obtenerClientePorId(s.clienteId);
+                        const horaStr = new Date(s.fechaProxima).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                        const msgAgenda = 'Hola ' + s.clienteNombre + '! Te recordamos tu cita de Reiki en *Alma Raíz* para el día ' + fechaFormateada + ' a las ' + horaStr + ' hs. ¡Te esperamos con mucho amor! ✨';
+
+                        return `
+                            <div style="background:#faf8f5; border-left:4px solid var(--accent-green); border-radius:8px; padding:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                                <div>
+                                    <div style="font-weight:700; color:var(--primary); font-size:1rem;">
+                                        ⏰ ${horaStr} hs — ${s.clienteNombre}
+                                    </div>
+                                    <div style="font-size:0.83rem; color:var(--text-muted); margin-top:2px;">
+                                        Terapia: <strong>${s.tipoTerapia}</strong> ${cliente && cliente.telefono ? `| 📱 ${cliente.telefono}` : ''}
+                                    </div>
+                                </div>
+                                <div style="display:flex; gap:6px;">
+                                    ${cliente && cliente.telefono ? `
+                                        <a class="btn-action-icon wa" style="width:34px; height:34px; border-radius:7px;" target="_blank" href="${urlWhatsApp(cliente.telefono, msgAgenda)}" title="Enviar recordatorio por WhatsApp">
+                                            ${waSvgIcon}
+                                        </a>
+                                    ` : ''}
+                                    <button class="btn-action-icon edit" style="width:34px; height:34px; border-radius:7px;" onclick="editarSesion('${s.id}')" title="Editar cita/sesión">
+                                        ✏️
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    function cerrarDetalleDia() {
+        diaSeleccionadoCalendario = null;
+        renderizarCalendario();
+    }
+
+    // PRÓXIMAS CITAS & AGENDA (VISTA LISTA)
     function renderizarAgenda() {
         const sesiones = db.obtenerSesiones();
         const ahora = new Date();
@@ -1925,6 +2323,8 @@
             .sort((a,b) => new Date(a.fechaProxima) - new Date(b.fechaProxima));
 
         const cont = document.getElementById('contenedorAgenda');
+        if (!cont) return;
+
         if (citasFuturas.length === 0) {
             cont.innerHTML = `
                 <div class="empty-state">
@@ -2153,6 +2553,8 @@
                         actualizarContadores();
                         aplicarFiltrosHistorial();
                         renderizarDirectorio();
+                        if (vistaAgendaActiva === 'calendario') renderizarCalendario();
+                        else renderizarAgenda();
                         mostrarNotificacion('✅ Respaldo restaurado con éxito.');
                     }
                 } else {
