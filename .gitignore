@@ -9,6 +9,11 @@
 *.png
 *.avi
 *.pdf
+*.mp4
+*.mov
+*.m4v
+*.docx
+*.doc
 
 # OS generated files
 Thumbs.db
