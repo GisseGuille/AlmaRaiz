@@ -659,7 +659,7 @@
         }
 
         /* FORMULARIOS DESPLEGABLES / MODAL */
-        #contenedorFormCliente, #cardFormSesion, #cardConfigNube {
+        #contenedorFormCliente, #cardFormSesion, #cardConfigNube, #cardConfigIA {
             display: none;
             animation: fadeIn 0.25s ease;
             border: 2px solid var(--accent-gold);
@@ -888,6 +888,25 @@
         </form>
     </div>
 
+    <!-- PANEL DE CONFIGURACIÓN DEL ASISTENTE DE IA (GOOGLE GEMINI - GRATIS) -->
+    <div class="card" id="cardConfigIA" style="max-width: 850px; margin: 0 auto 24px;">
+        <div class="card-header">
+            <h2>✨ Asistente de IA Gratuito (Google Gemini) para Diagnósticos</h2>
+            <button type="button" class="btn btn-outline btn-sm" onclick="cerrarConfigIA()">✖ Cerrar</button>
+        </div>
+        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 15px;">
+            Obtené tu clave de API <strong>gratuita</strong> de Google en <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> (necesitás iniciar sesión con una cuenta de Google) y pegala acá. Con eso vas a poder dictar por voz el diagnóstico de una sesión y que la IA lo interprete y redacte automáticamente, sin ningún costo. La clave se guarda solo en este navegador (localStorage), nunca se comparte con Alma Raíz ni con terceros.
+        </p>
+        <form id="formClaudeConfig">
+            <label for="inputClaudeApiKey">Clave de API de Google Gemini (empieza con "AIza...")</label>
+            <input type="password" id="inputClaudeApiKey" placeholder="AIza...">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px;">
+                <button type="submit" class="btn btn-green" style="width: auto;">💾 Guardar Clave</button>
+                <button type="button" class="btn btn-outline" style="width: auto;" onclick="borrarClaveIA()">Borrar Clave</button>
+            </div>
+        </form>
+    </div>
+
     <!-- BARRA DE ESTADÍSTICAS RÁPIDAS -->
     <div class="stats-bar">
         <div class="stat-card">
@@ -1049,9 +1068,17 @@
                     </div>
                 </div>
                 
-                <label for="temas">Temas Tratados / Diagnóstico Energético *</label>
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                    <label for="temas" style="margin-bottom: 0;">Temas Tratados / Diagnóstico Energético *</label>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="btn btn-outline btn-sm" id="btnDictar" onclick="toggleDictado()" title="Dictar por voz">🎤 Dictar</button>
+                        <button type="button" class="btn btn-gold btn-sm" id="btnInterpretarIA" onclick="interpretarConIA()" title="Interpretar y redactar con IA">✨ Interpretar con IA</button>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="abrirConfigIA()" title="Configurar clave de API gratuita de Google Gemini">⚙️</button>
+                    </div>
+                </div>
                 <textarea id="temas" rows="3" required placeholder="Ej. Bloqueo en chakra plexo solar y garganta. Se trabajó respiración consciente y corte de lazos. Sensación de paz al finalizar."></textarea>
-                
+                <small id="estadoAsistenteIA" style="display: none; color: var(--text-muted); font-size: 0.78rem;"></small>
+
                 <div class="form-row">
                     <div>
                         <label for="fechaProxima">Próxima Sesión / Cita Agendada</label>
@@ -1661,6 +1688,187 @@
         } else {
             db.iniciarFirebase();
             mostrarNotificacion('Reintentando conexión con Firebase...');
+        }
+    }
+
+    // --- ASISTENTE DE IA (GOOGLE GEMINI, GRATIS): DICTADO POR VOZ + INTERPRETACIÓN ---
+    const CLAUDE_API_KEY_STORAGE = 'almaraiz_gemini_apikey';
+    const GEMINI_MODEL = 'gemini-flash-latest';
+    let reconocimientoVoz = null;
+    let dictadoActivo = false;
+
+    function abrirConfigIA() {
+        const panel = document.getElementById('cardConfigIA');
+        document.getElementById('inputClaudeApiKey').value = localStorage.getItem(CLAUDE_API_KEY_STORAGE) || '';
+        panel.style.display = 'block';
+        panel.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function cerrarConfigIA() {
+        document.getElementById('cardConfigIA').style.display = 'none';
+    }
+
+    document.getElementById('formClaudeConfig').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const key = document.getElementById('inputClaudeApiKey').value.trim();
+        if (!key) {
+            alert('Ingresa una clave de API válida.');
+            return;
+        }
+        localStorage.setItem(CLAUDE_API_KEY_STORAGE, key);
+        mostrarNotificacion('✨ Clave de IA guardada correctamente.');
+        cerrarConfigIA();
+    });
+
+    function borrarClaveIA() {
+        localStorage.removeItem(CLAUDE_API_KEY_STORAGE);
+        document.getElementById('inputClaudeApiKey').value = '';
+        mostrarNotificacion('Clave de IA eliminada.');
+    }
+
+    function mostrarEstadoAsistenteIA(msg) {
+        const el = document.getElementById('estadoAsistenteIA');
+        if (!msg) {
+            el.style.display = 'none';
+            return;
+        }
+        el.textContent = msg;
+        el.style.display = 'block';
+    }
+
+    function toggleDictado() {
+        const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognitionAPI) {
+            alert('Tu navegador no soporta dictado por voz. Probá con Google Chrome en computadora o Android.');
+            return;
+        }
+
+        const btn = document.getElementById('btnDictar');
+        const textarea = document.getElementById('temas');
+
+        if (dictadoActivo) {
+            reconocimientoVoz.stop();
+            return;
+        }
+
+        reconocimientoVoz = new SpeechRecognitionAPI();
+        reconocimientoVoz.lang = 'es-ES';
+        reconocimientoVoz.continuous = true;
+        reconocimientoVoz.interimResults = true;
+
+        let baseTexto = textarea.value.trim();
+        if (baseTexto) baseTexto += ' ';
+
+        reconocimientoVoz.onstart = () => {
+            dictadoActivo = true;
+            btn.textContent = '⏹ Detener';
+            btn.style.background = '#c0392b';
+            btn.style.color = '#fff';
+            btn.style.borderColor = '#c0392b';
+            mostrarEstadoAsistenteIA('🎙️ Escuchando... hablá el diagnóstico del consultante.');
+        };
+
+        reconocimientoVoz.onresult = (event) => {
+            let finalTexto = '';
+            let interimTexto = '';
+            for (let i = 0; i < event.results.length; i++) {
+                if (event.results[i].isFinal) {
+                    finalTexto += event.results[i][0].transcript;
+                } else {
+                    interimTexto += event.results[i][0].transcript;
+                }
+            }
+            textarea.value = (baseTexto + finalTexto + interimTexto).trim();
+        };
+
+        reconocimientoVoz.onerror = (event) => {
+            mostrarEstadoAsistenteIA('');
+            if (event.error !== 'no-speech' && event.error !== 'aborted') {
+                alert('Error al dictar: ' + event.error);
+            }
+        };
+
+        reconocimientoVoz.onend = () => {
+            dictadoActivo = false;
+            btn.textContent = '🎤 Dictar';
+            btn.style.background = '';
+            btn.style.color = '';
+            btn.style.borderColor = '';
+            mostrarEstadoAsistenteIA('');
+        };
+
+        reconocimientoVoz.start();
+    }
+
+    async function interpretarConIA() {
+        const textarea = document.getElementById('temas');
+        const notasCrudas = textarea.value.trim();
+
+        if (!notasCrudas) {
+            alert('Primero dictá o escribí algunas notas sobre la sesión en el campo de diagnóstico.');
+            return;
+        }
+
+        const apiKey = localStorage.getItem(CLAUDE_API_KEY_STORAGE);
+        if (!apiKey) {
+            alert('Primero configurá tu clave de API gratuita de Google Gemini con el botón ⚙️.');
+            abrirConfigIA();
+            return;
+        }
+
+        const btn = document.getElementById('btnInterpretarIA');
+        const textoOriginalBtn = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '✨ Interpretando...';
+        mostrarEstadoAsistenteIA('La IA está interpretando y redactando el diagnóstico...');
+
+        try {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
+            const respuesta = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    systemInstruction: {
+                        parts: [{ text: 'Eres un asistente para una terapeuta holística (Reiki y sanación energética) que ayuda a redactar el campo "Temas Tratados / Diagnóstico Energético" de una ficha de sesión, a partir de notas dictadas por voz (a menudo desordenadas o con errores de transcripción). Interpretá la nota y devolvé un texto breve, claro y profesional en español rioplatense, de 2 a 4 frases, conservando todos los datos relevantes mencionados (chakras, bloqueos, técnicas usadas, sensaciones del consultante, evolución). No inventes información que no esté en la nota. Respondé ÚNICAMENTE con el texto final del diagnóstico, sin comillas, sin encabezados y sin explicaciones adicionales.' }]
+                    },
+                    contents: [{ role: 'user', parts: [{ text: notasCrudas }] }],
+                    generationConfig: {
+                        temperature: 0.4,
+                        maxOutputTokens: 1024,
+                        thinkingConfig: { thinkingBudget: 0 }
+                    }
+                })
+            });
+
+            const data = await respuesta.json();
+
+            if (!respuesta.ok) {
+                throw new Error(data?.error?.message || `Error ${respuesta.status} al contactar la IA.`);
+            }
+
+            if (data?.promptFeedback?.blockReason) {
+                throw new Error('La IA bloqueó la respuesta (' + data.promptFeedback.blockReason + '). Probá reformular el dictado.');
+            }
+
+            const candidato = data?.candidates?.[0];
+            const textoIA = candidato?.content?.parts?.map(p => p.text || '').join('').trim();
+
+            if (textoIA && candidato?.finishReason === 'MAX_TOKENS') {
+                throw new Error('La respuesta de la IA se cortó por límite de tokens. Probá de nuevo con un dictado más corto.');
+            }
+
+            if (textoIA) {
+                textarea.value = textoIA;
+                mostrarNotificacion('✨ Diagnóstico interpretado y redactado por la IA.');
+            } else {
+                throw new Error('La IA no devolvió texto interpretable.');
+            }
+        } catch (err) {
+            alert('No se pudo interpretar con IA: ' + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = textoOriginalBtn;
+            mostrarEstadoAsistenteIA('');
         }
     }
 
