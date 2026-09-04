@@ -1822,15 +1822,15 @@
         btn.textContent = '✨ Interpretando...';
         mostrarEstadoAsistenteIA('La IA está interpretando y redactando el diagnóstico...');
 
-        try {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
+        const systemPrompt = 'Eres un asistente para una terapeuta holística (Reiki y sanación energética) que ayuda a redactar el campo "Temas Tratados / Diagnóstico Energético" de una ficha de sesión, a partir de notas dictadas por voz (a menudo desordenadas o con errores de transcripción). Interpretá la nota y devolvé un texto breve, claro y profesional en español rioplatense, de 2 a 4 frases, conservando todos los datos relevantes mencionados (chakras, bloqueos, técnicas usadas, sensaciones del consultante, evolución). No inventes información que no esté en la nota. Respondé ÚNICAMENTE con el texto final del diagnóstico, sin comillas, sin encabezados y sin explicaciones adicionales.';
+
+        async function llamarGemini(modelo) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${encodeURIComponent(apiKey)}`;
             const respuesta = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    systemInstruction: {
-                        parts: [{ text: 'Eres un asistente para una terapeuta holística (Reiki y sanación energética) que ayuda a redactar el campo "Temas Tratados / Diagnóstico Energético" de una ficha de sesión, a partir de notas dictadas por voz (a menudo desordenadas o con errores de transcripción). Interpretá la nota y devolvé un texto breve, claro y profesional en español rioplatense, de 2 a 4 frases, conservando todos los datos relevantes mencionados (chakras, bloqueos, técnicas usadas, sensaciones del consultante, evolución). No inventes información que no esté en la nota. Respondé ÚNICAMENTE con el texto final del diagnóstico, sin comillas, sin encabezados y sin explicaciones adicionales.' }]
-                    },
+                    systemInstruction: { parts: [{ text: systemPrompt }] },
                     contents: [{ role: 'user', parts: [{ text: notasCrudas }] }],
                     generationConfig: {
                         temperature: 0.4,
@@ -1843,7 +1843,9 @@
             const data = await respuesta.json();
 
             if (!respuesta.ok) {
-                throw new Error(data?.error?.message || `Error ${respuesta.status} al contactar la IA.`);
+                const err = new Error(data?.error?.message || `Error ${respuesta.status} al contactar la IA.`);
+                err.status = respuesta.status;
+                throw err;
             }
 
             if (data?.promptFeedback?.blockReason) {
@@ -1856,15 +1858,50 @@
             if (textoIA && candidato?.finishReason === 'MAX_TOKENS') {
                 throw new Error('La respuesta de la IA se cortó por límite de tokens. Probá de nuevo con un dictado más corto.');
             }
-
-            if (textoIA) {
-                textarea.value = textoIA;
-                mostrarNotificacion('✨ Diagnóstico interpretado y redactado por la IA.');
-            } else {
+            if (!textoIA) {
                 throw new Error('La IA no devolvió texto interpretable.');
             }
+            return textoIA;
+        }
+
+        const esperar = (ms) => new Promise(r => setTimeout(r, ms));
+
+        try {
+            let textoIA;
+            let ultimoError;
+            // Reintenta ante saturación del modelo (503, típico en el nivel gratuito en horas pico),
+            // y como último recurso prueba un modelo alternativo antes de rendirse.
+            const intentos = [
+                { modelo: GEMINI_MODEL, espera: 0 },
+                { modelo: GEMINI_MODEL, espera: 1500 },
+                { modelo: GEMINI_MODEL, espera: 3000 },
+                { modelo: 'gemini-2.0-flash', espera: 500 }
+            ];
+
+            for (const intento of intentos) {
+                if (intento.espera) {
+                    mostrarEstadoAsistenteIA('El modelo está saturado, reintentando en unos segundos...');
+                    await esperar(intento.espera);
+                }
+                try {
+                    textoIA = await llamarGemini(intento.modelo);
+                    ultimoError = null;
+                    break;
+                } catch (err) {
+                    ultimoError = err;
+                    if (err.status !== 503) break;
+                }
+            }
+
+            if (ultimoError) throw ultimoError;
+
+            textarea.value = textoIA;
+            mostrarNotificacion('✨ Diagnóstico interpretado y redactado por la IA.');
         } catch (err) {
-            alert('No se pudo interpretar con IA: ' + err.message);
+            const msg = err.status === 503
+                ? 'El modelo de IA está saturado por alta demanda (nivel gratuito). Esperá un minuto y volvé a intentar.'
+                : err.message;
+            alert('No se pudo interpretar con IA: ' + msg);
         } finally {
             btn.disabled = false;
             btn.textContent = textoOriginalBtn;
