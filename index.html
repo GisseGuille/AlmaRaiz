@@ -337,6 +337,26 @@
             .form-row, .form-row-3 { grid-template-columns: 1fr; }
         }
 
+        .tipo-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 4px;
+            border-bottom: 1px solid var(--border);
+        }
+        .tipo-row:last-child { border-bottom: none; }
+        .tipo-row .tipo-nombre { flex: 1; font-size: 0.92rem; font-weight: 500; }
+        .tipo-row input.tipo-edit-input { flex: 1; padding: 6px 10px; }
+        .tipo-uso-badge {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2px 9px;
+            white-space: nowrap;
+        }
+
         .age-badge {
             display: inline-block;
             margin-left: 6px;
@@ -659,7 +679,7 @@
         }
 
         /* FORMULARIOS DESPLEGABLES / MODAL */
-        #contenedorFormCliente, #cardFormSesion, #cardConfigNube, #cardConfigIA {
+        #contenedorFormCliente, #cardFormSesion, #cardConfigNube, #cardConfigIA, #cardConfigTipos {
             display: none;
             animation: fadeIn 0.25s ease;
             border: 2px solid var(--accent-gold);
@@ -907,6 +927,22 @@
         </form>
     </div>
 
+    <!-- PANEL DE GESTIÓN DE TIPOS DE SESIÓN -->
+    <div class="card" id="cardConfigTipos" style="max-width: 650px; margin: 0 auto 24px;">
+        <div class="card-header">
+            <h2>🏷️ Tipos de Sesión</h2>
+            <button type="button" class="btn btn-outline btn-sm" onclick="cerrarConfigTipos()">✖ Cerrar</button>
+        </div>
+        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 15px;">
+            Agregá, renombrá o eliminá los tipos de sesión disponibles. Un tipo que ya tiene sesiones registradas no se puede editar ni eliminar, para no alterar el historial existente.
+        </p>
+        <div style="display: flex; gap: 10px; margin-bottom: 18px;">
+            <input type="text" id="inputNuevoTipo" placeholder="Ej. Sanación con Cristales" style="flex: 1;">
+            <button type="button" class="btn btn-green" style="width: auto; white-space: nowrap;" onclick="agregarTipoSesionUI()">+ Agregar</button>
+        </div>
+        <div id="listaTiposSesion"></div>
+    </div>
+
     <!-- BARRA DE ESTADÍSTICAS RÁPIDAS -->
     <div class="stats-bar">
         <div class="stat-card">
@@ -1047,15 +1083,11 @@
                         </select>
                     </div>
                     <div>
-                        <label for="tipoTerapia">Tipo de Sesión</label>
-                        <select id="tipoTerapia">
-                            <option value="Reiki Usui">Reiki Usui</option>
-                            <option value="Alineación de Chakras">Alineación de Chakras</option>
-                            <option value="Reiki a Distancia">Reiki a Distancia</option>
-                            <option value="Sanación Energética Integral">Sanación Energética Integral</option>
-                            <option value="Armonización con Péndulo">Armonización con Péndulo</option>
-                            <option value="Otra Terapia">Otra Terapia</option>
-                        </select>
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <label for="tipoTerapia" style="margin-bottom: 0;">Tipo de Sesión</label>
+                            <button type="button" class="btn btn-outline btn-sm" style="padding: 2px 8px; margin-bottom: 6px;" onclick="abrirConfigTipos()" title="Agregar, editar o eliminar tipos de sesión">⚙️</button>
+                        </div>
+                        <select id="tipoTerapia"></select>
                     </div>
                     <div>
                         <label for="evolucion">Evolución Energética *</label>
@@ -1331,12 +1363,28 @@
         }
 
         iniciarDB() {
+            const tiposPorDefecto = () => ([
+                { id: 'tipo-reiki-usui', nombre: 'Reiki Usui' },
+                { id: 'tipo-alineacion-chakras', nombre: 'Alineación de Chakras' },
+                { id: 'tipo-reiki-distancia', nombre: 'Reiki a Distancia' },
+                { id: 'tipo-sanacion-integral', nombre: 'Sanación Energética Integral' },
+                { id: 'tipo-armonizacion-pendulo', nombre: 'Armonización con Péndulo' },
+                { id: 'tipo-otra-terapia', nombre: 'Otra Terapia' },
+            ]);
+
             if (!localStorage.getItem(this.dbKey)) {
                 if (localStorage.getItem(this.legacyKey)) {
                     const legacy = JSON.parse(localStorage.getItem(this.legacyKey));
+                    if (!legacy.tiposSesion) legacy.tiposSesion = tiposPorDefecto();
                     localStorage.setItem(this.dbKey, JSON.stringify(legacy));
                 } else {
-                    localStorage.setItem(this.dbKey, JSON.stringify({ clientes: [], sesiones: [] }));
+                    localStorage.setItem(this.dbKey, JSON.stringify({ clientes: [], sesiones: [], tiposSesion: tiposPorDefecto() }));
+                }
+            } else {
+                const datos = this._leer();
+                if (!datos.tiposSesion || datos.tiposSesion.length === 0) {
+                    datos.tiposSesion = tiposPorDefecto();
+                    localStorage.setItem(this.dbKey, JSON.stringify(datos));
                 }
             }
         }
@@ -1400,13 +1448,30 @@
                     }
                 }
             }, err => console.warn('Aviso conexión Firestore sesiones:', err));
+
+            // Sincronizar tipos de sesión en tiempo real
+            this.firestore.collection('tiposSesion').onSnapshot(snapshot => {
+                const tiposSesion = [];
+                snapshot.forEach(doc => tiposSesion.push({ id: doc.id, ...doc.data() }));
+                const datos = this._leer();
+                if (snapshot.size > 0) {
+                    datos.tiposSesion = tiposSesion;
+                    localStorage.setItem(this.dbKey, JSON.stringify(datos));
+                    actualizarSelects();
+                    if (document.getElementById('cardConfigTipos').style.display === 'block') {
+                        renderizarTiposSesion();
+                    }
+                }
+            }, err => console.warn('Aviso conexión Firestore tipos de sesión:', err));
         }
 
         _leer() {
             try {
-                return JSON.parse(localStorage.getItem(this.dbKey)) || { clientes: [], sesiones: [] };
+                const datos = JSON.parse(localStorage.getItem(this.dbKey)) || { clientes: [], sesiones: [], tiposSesion: [] };
+                if (!datos.tiposSesion) datos.tiposSesion = [];
+                return datos;
             } catch (e) {
-                return { clientes: [], sesiones: [] };
+                return { clientes: [], sesiones: [], tiposSesion: [] };
             }
         }
 
@@ -1587,11 +1652,92 @@
             return this.obtenerSesiones().filter(s => s.clienteId === clienteId);
         }
 
+        // TIPOS DE SESIÓN
+        obtenerTiposSesion() {
+            return this._leer().tiposSesion.slice().sort((a, b) => a.nombre.localeCompare(b.nombre));
+        }
+
+        contarUsosTipoSesion(nombre) {
+            return this._leer().sesiones.filter(s => s.tipoTerapia === nombre).length;
+        }
+
+        async agregarTipoSesion(nombre) {
+            const nombreLimpio = nombre.trim();
+            const datos = this._leer();
+            const yaExiste = datos.tiposSesion.some(t => t.nombre.toLowerCase() === nombreLimpio.toLowerCase());
+            if (yaExiste) throw new Error('Ya existe un tipo de sesión con ese nombre.');
+
+            const nuevoTipo = { id: 'tipo-' + Date.now().toString(), nombre: nombreLimpio };
+            datos.tiposSesion.push(nuevoTipo);
+            this._guardar(datos);
+
+            if (this.firestore && this.isCloudActive) {
+                actualizarEstadoNubeUI('syncing', 'Sincronizando...');
+                try {
+                    await this.firestore.collection('tiposSesion').doc(nuevoTipo.id).set(nuevoTipo);
+                    actualizarEstadoNubeUI('online', 'Nube Sincronizada');
+                } catch (e) {
+                    console.warn('Aviso al guardar tipo de sesión en nube:', e);
+                }
+            }
+            return nuevoTipo;
+        }
+
+        async editarTipoSesion(id, nuevoNombre) {
+            const nombreLimpio = nuevoNombre.trim();
+            const datos = this._leer();
+            const tipo = datos.tiposSesion.find(t => t.id === id);
+            if (!tipo) return null;
+
+            if (this.contarUsosTipoSesion(tipo.nombre) > 0) {
+                throw new Error('No se puede editar: este tipo ya tiene sesiones registradas.');
+            }
+            const yaExiste = datos.tiposSesion.some(t => t.id !== id && t.nombre.toLowerCase() === nombreLimpio.toLowerCase());
+            if (yaExiste) throw new Error('Ya existe un tipo de sesión con ese nombre.');
+
+            tipo.nombre = nombreLimpio;
+            this._guardar(datos);
+
+            if (this.firestore && this.isCloudActive) {
+                actualizarEstadoNubeUI('syncing', 'Sincronizando...');
+                try {
+                    await this.firestore.collection('tiposSesion').doc(id).set(tipo);
+                    actualizarEstadoNubeUI('online', 'Nube Sincronizada');
+                } catch (e) {
+                    console.warn('Aviso al editar tipo de sesión en nube:', e);
+                }
+            }
+            return tipo;
+        }
+
+        async eliminarTipoSesion(id) {
+            const datos = this._leer();
+            const tipo = datos.tiposSesion.find(t => t.id === id);
+            if (!tipo) return;
+
+            if (this.contarUsosTipoSesion(tipo.nombre) > 0) {
+                throw new Error('No se puede eliminar: este tipo ya tiene sesiones registradas.');
+            }
+
+            datos.tiposSesion = datos.tiposSesion.filter(t => t.id !== id);
+            this._guardar(datos);
+
+            if (this.firestore && this.isCloudActive) {
+                actualizarEstadoNubeUI('syncing', 'Sincronizando...');
+                try {
+                    await this.firestore.collection('tiposSesion').doc(id).delete();
+                    actualizarEstadoNubeUI('online', 'Nube Sincronizada');
+                } catch (e) {
+                    console.warn('Aviso al eliminar tipo de sesión de nube:', e);
+                }
+            }
+        }
+
         async sincronizarTodoALaNube() {
             if (!this.firestore) return false;
             const datos = this._leer();
-            if (datos.clientes.length === 0 && datos.sesiones.length === 0) return true;
-            
+            if (datos.clientes.length === 0 && datos.sesiones.length === 0 && datos.tiposSesion.length === 0) return true;
+
             actualizarEstadoNubeUI('syncing', 'Sincronizando nube...');
             try {
                 const batch = this.firestore.batch();
@@ -1602,6 +1748,10 @@
                 datos.sesiones.forEach(s => {
                     const ref = this.firestore.collection('sesiones').doc(s.id);
                     batch.set(ref, s);
+                });
+                datos.tiposSesion.forEach(t => {
+                    const ref = this.firestore.collection('tiposSesion').doc(t.id);
+                    batch.set(ref, t);
                 });
                 await batch.commit();
                 actualizarEstadoNubeUI('online', 'Nube Conectada (Firebase)');
@@ -1942,14 +2092,130 @@
         const selectCliente = document.getElementById('selectCliente');
         const filtroCliente = document.getElementById('filtroCliente');
 
-        const opciones = '<option value="">-- Elige un consultante --</option>' + 
+        const opciones = '<option value="">-- Elige un consultante --</option>' +
             clientes.map(c => `<option value="${c.id}">${c.nombre} ${c.dni ? `(DNI: ${c.dni})` : ''}</option>`).join('');
 
-        const opcionesFiltro = '<option value="">-- Todos los consultantes --</option>' + 
+        const opcionesFiltro = '<option value="">-- Todos los consultantes --</option>' +
             clientes.map(c => `<option value="${c.id}">${c.nombre} ${c.dni ? `(DNI: ${c.dni})` : ''}</option>`).join('');
 
         selectCliente.innerHTML = opciones;
         filtroCliente.innerHTML = opcionesFiltro;
+
+        const selectTipo = document.getElementById('tipoTerapia');
+        const valorPrevio = selectTipo.value;
+        const tipos = db.obtenerTiposSesion();
+        selectTipo.innerHTML = tipos.map(t => `<option value="${t.nombre}">${t.nombre}</option>`).join('');
+        if (tipos.some(t => t.nombre === valorPrevio)) {
+            selectTipo.value = valorPrevio;
+        }
+    }
+
+    // GESTIÓN DE TIPOS DE SESIÓN
+    function abrirConfigTipos() {
+        const panel = document.getElementById('cardConfigTipos');
+        document.getElementById('inputNuevoTipo').value = '';
+        renderizarTiposSesion();
+        panel.style.display = 'block';
+        panel.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function cerrarConfigTipos() {
+        document.getElementById('cardConfigTipos').style.display = 'none';
+    }
+
+    function renderizarTiposSesion() {
+        const cont = document.getElementById('listaTiposSesion');
+        const tipos = db.obtenerTiposSesion();
+
+        if (tipos.length === 0) {
+            cont.innerHTML = '<p style="color: var(--text-muted); font-size: 0.88rem;">Todavía no hay tipos de sesión cargados.</p>';
+            return;
+        }
+
+        cont.innerHTML = tipos.map(t => {
+            const usos = db.contarUsosTipoSesion(t.nombre);
+            const enUso = usos > 0;
+            const badge = enUso
+                ? `<span class="tipo-uso-badge">${usos} sesión${usos === 1 ? '' : 'es'}</span>`
+                : `<span class="tipo-uso-badge">sin uso</span>`;
+            const disabledAttr = enUso ? 'disabled title="No se puede editar: ya tiene sesiones registradas."' : '';
+            const disabledAttrDel = enUso ? 'disabled title="No se puede eliminar: ya tiene sesiones registradas."' : '';
+
+            return `
+                <div class="tipo-row" id="filaTipo-${t.id}">
+                    <span class="tipo-nombre">${t.nombre}</span>
+                    ${badge}
+                    <button type="button" class="btn btn-outline btn-sm" ${disabledAttr} onclick="iniciarEdicionTipo('${t.id}')">✏️</button>
+                    <button type="button" class="btn btn-outline btn-sm" ${disabledAttrDel} onclick="eliminarTipoSesionUI('${t.id}')">🗑️</button>
+                </div>
+            `;
+        }).join('');
+    }
+
+    async function agregarTipoSesionUI() {
+        const input = document.getElementById('inputNuevoTipo');
+        const nombre = input.value.trim();
+        if (!nombre) {
+            alert('Escribí un nombre para el nuevo tipo de sesión.');
+            return;
+        }
+        try {
+            await db.agregarTipoSesion(nombre);
+            input.value = '';
+            renderizarTiposSesion();
+            actualizarSelects();
+            mostrarNotificacion('🏷️ Tipo de sesión agregado.');
+        } catch (e) {
+            alert(e.message);
+        }
+    }
+
+    function iniciarEdicionTipo(id) {
+        const tipos = db.obtenerTiposSesion();
+        const tipo = tipos.find(t => t.id === id);
+        if (!tipo) return;
+
+        const fila = document.getElementById(`filaTipo-${id}`);
+        fila.innerHTML = `
+            <input type="text" class="tipo-edit-input" id="inputEditarTipo-${id}" value="${tipo.nombre}">
+            <button type="button" class="btn btn-green btn-sm" onclick="guardarEdicionTipo('${id}')">Guardar</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="renderizarTiposSesion()">Cancelar</button>
+        `;
+        document.getElementById(`inputEditarTipo-${id}`).focus();
+    }
+
+    async function guardarEdicionTipo(id) {
+        const nuevoNombre = document.getElementById(`inputEditarTipo-${id}`).value.trim();
+        if (!nuevoNombre) {
+            alert('El nombre no puede estar vacío.');
+            return;
+        }
+        try {
+            await db.editarTipoSesion(id, nuevoNombre);
+            renderizarTiposSesion();
+            actualizarSelects();
+            mostrarNotificacion('🏷️ Tipo de sesión actualizado.');
+        } catch (e) {
+            alert(e.message);
+            renderizarTiposSesion();
+        }
+    }
+
+    async function eliminarTipoSesionUI(id) {
+        const tipos = db.obtenerTiposSesion();
+        const tipo = tipos.find(t => t.id === id);
+        if (!tipo) return;
+
+        if (!confirm(`¿Eliminar el tipo de sesión "${tipo.nombre}"?`)) return;
+
+        try {
+            await db.eliminarTipoSesion(id);
+            renderizarTiposSesion();
+            actualizarSelects();
+            mostrarNotificacion('🏷️ Tipo de sesión eliminado.');
+        } catch (e) {
+            alert(e.message);
+        }
     }
 
     function actualizarContadores() {
