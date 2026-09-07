@@ -623,6 +623,38 @@
             transform: translateY(-1px);
         }
 
+        /* MODAL: AGENDAR SESIÓN */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(54, 45, 41, 0.55);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        .modal-box {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            padding: 26px;
+            max-width: 420px;
+            width: 100%;
+            animation: fadeIn 0.2s ease;
+        }
+        .modal-cliente-nombre {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary);
+            background: var(--primary-light);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 16px;
+        }
+
         .table-actions-icons {
             display: flex;
             gap: 6px;
@@ -941,6 +973,24 @@
             <button type="button" class="btn btn-green" style="width: auto; white-space: nowrap;" onclick="agregarTipoSesionUI()">+ Agregar</button>
         </div>
         <div id="listaTiposSesion"></div>
+    </div>
+
+    <!-- MODAL: AGENDAR SESIÓN DESDE EL DIRECTORIO -->
+    <div class="modal-overlay" id="modalAgendarCita">
+        <div class="modal-box">
+            <div class="card-header" style="margin-bottom: 16px;">
+                <h2>📅 Agendar Sesión</h2>
+                <button type="button" class="btn btn-outline btn-sm" onclick="cerrarModalAgendarCita()">✖ Cerrar</button>
+            </div>
+            <form id="formAgendarCita">
+                <input type="hidden" id="agendarClienteId">
+                <label>Consultante</label>
+                <div class="modal-cliente-nombre" id="agendarNombreCliente"></div>
+                <label for="agendarFecha">Fecha y hora de la próxima cita *</label>
+                <input type="datetime-local" id="agendarFecha" required>
+                <button type="submit" class="btn btn-primary" style="margin-top: 18px;">📅 Confirmar Cita</button>
+            </form>
+        </div>
     </div>
 
     <!-- BARRA DE ESTADÍSTICAS RÁPIDAS -->
@@ -2110,6 +2160,54 @@
         }
     }
 
+    // MODAL: AGENDAR SESIÓN DESDE EL DIRECTORIO
+    function abrirModalAgendarCita(clienteId) {
+        const cliente = db.obtenerClientePorId(clienteId);
+        if (!cliente) return;
+
+        document.getElementById('agendarClienteId').value = clienteId;
+        document.getElementById('agendarNombreCliente').textContent = cliente.nombre;
+        document.getElementById('agendarFecha').value = '';
+        document.getElementById('modalAgendarCita').style.display = 'flex';
+        setTimeout(() => document.getElementById('agendarFecha').focus(), 50);
+    }
+
+    function cerrarModalAgendarCita() {
+        document.getElementById('modalAgendarCita').style.display = 'none';
+    }
+
+    document.getElementById('formAgendarCita').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const clienteId = document.getElementById('agendarClienteId').value;
+        const fechaProxima = document.getElementById('agendarFecha').value;
+        if (!clienteId || !fechaProxima) return;
+
+        const sesionesPrevias = db.obtenerSesionesPorCliente(clienteId);
+        const ultimaSesion = sesionesPrevias[0];
+        const tiposDisponibles = db.obtenerTiposSesion();
+        const tipoTerapia = (ultimaSesion && ultimaSesion.tipoTerapia)
+            || (tiposDisponibles[0] && tiposDisponibles[0].nombre)
+            || 'Reiki Usui';
+
+        await db.registrarSesion(
+            clienteId,
+            tipoTerapia,
+            'Cita agendada — pendiente de registrar el diagnóstico de la sesión.',
+            'Inicial',
+            fechaProxima
+        );
+
+        cerrarModalAgendarCita();
+        mostrarNotificacion('📅 Cita agendada con éxito.');
+        aplicarFiltrosHistorial();
+        renderizarDirectorio();
+        if (vistaAgendaActiva === 'calendario') {
+            renderizarCalendario();
+        } else {
+            renderizarAgenda();
+        }
+    });
+
     // GESTIÓN DE TIPOS DE SESIÓN
     function abrirConfigTipos() {
         const panel = document.getElementById('cardConfigTipos');
@@ -2315,20 +2413,6 @@
         document.getElementById('formSesion').reset();
     }
 
-    function iniciarNuevaSesionPara(clienteId) {
-        cambiarPestana('historial');
-        abrirNuevaSesion();
-        const selectCliente = document.getElementById('selectCliente');
-        if (selectCliente) {
-            selectCliente.value = clienteId;
-        }
-        const temas = document.getElementById('temas');
-        if (temas) {
-            temas.focus();
-        }
-        mostrarNotificacion('✨ Listo para registrar la sesión.');
-    }
-
     document.getElementById('formSesion').addEventListener('submit', async (e) => {
         e.preventDefault();
         const editId = document.getElementById('editSesionId').value;
@@ -2442,8 +2526,8 @@
                     </td>
                     <td>
                         <div class="table-actions">
-                            <button class="btn-action-main" onclick="iniciarNuevaSesionPara('${c.id}')" title="Registrar nueva sesión">
-                                ✨ Nueva Sesión
+                            <button class="btn-action-main" onclick="abrirModalAgendarCita('${c.id}')" title="Agendar próxima sesión">
+                                📅 Agendar Sesión
                             </button>
                             <div class="table-actions-icons">
                                 ${c.telefono ? `
