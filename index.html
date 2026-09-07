@@ -1893,6 +1893,7 @@
 
     // --- ASISTENTE DE IA (GOOGLE GEMINI, GRATIS): DICTADO POR VOZ + INTERPRETACIÓN ---
     const CLAUDE_API_KEY_STORAGE = 'almaraiz_gemini_apikey';
+    const PLACEHOLDER_CITA_AGENDADA = 'Cita agendada — pendiente de registrar el diagnóstico de la sesión.';
     const GEMINI_MODEL = 'gemini-flash-latest';
     let reconocimientoVoz = null;
     let dictadoActivo = false;
@@ -2192,7 +2193,7 @@
         await db.registrarSesion(
             clienteId,
             tipoTerapia,
-            'Cita agendada — pendiente de registrar el diagnóstico de la sesión.',
+            PLACEHOLDER_CITA_AGENDADA,
             'Inicial',
             fechaProxima
         );
@@ -2468,6 +2469,22 @@
         const formCard = document.getElementById('cardFormSesion');
         formCard.style.display = 'block';
         formCard.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function iniciarSesionDesdeAgenda(sesionId) {
+        cambiarPestana('historial');
+        editarSesion(sesionId);
+
+        const temas = document.getElementById('temas');
+        if (temas.value.trim() === PLACEHOLDER_CITA_AGENDADA) {
+            temas.value = '';
+        }
+
+        // La fecha de esta cita ya pasó a ser "ahora"; el campo queda libre para
+        // anotar, si corresponde, la PRÓXIMA cita futura (no la actual).
+        document.getElementById('fechaProxima').value = '';
+
+        temas.focus();
     }
 
     // DIRECTORIO DE CLIENTES (TABLA PRINCIPAL)
@@ -2892,8 +2909,8 @@
                                             ${waSvgIcon}
                                         </a>
                                     ` : ''}
-                                    <button class="btn-action-icon edit" style="width:34px; height:34px; border-radius:7px;" onclick="editarSesion('${s.id}')" title="Editar cita/sesión">
-                                        ✏️
+                                    <button class="btn-action-icon edit" style="width:34px; height:34px; border-radius:7px;" onclick="iniciarSesionDesdeAgenda('${s.id}')" title="Iniciar sesión / completar diagnóstico">
+                                        🩺
                                     </button>
                                 </div>
                             </div>
@@ -2953,12 +2970,15 @@
                             Terapia: ${s.tipoTerapia}
                         </div>
                     </div>
-                    <div>
+                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                         ${cliente && cliente.telefono ? `
                             <a class="btn-action-icon wa" style="width:36px; height:36px; border-radius:8px;" target="_blank" href="${urlWhatsApp(cliente.telefono, msgAgenda)}" title="Enviar recordatorio por WhatsApp">
                                 ${waSvgIcon}
                             </a>
                         ` : '<span style="font-size:0.8rem; color:var(--text-muted);">Sin WhatsApp</span>'}
+                        <button type="button" class="btn btn-gold btn-sm" style="width:auto; white-space:nowrap;" onclick="iniciarSesionDesdeAgenda('${s.id}')" title="Completar el diagnóstico de esta sesión">
+                            🩺 Iniciar Sesión
+                        </button>
                     </div>
                 </div>
             `;
