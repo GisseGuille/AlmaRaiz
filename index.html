@@ -2023,7 +2023,7 @@
         btn.textContent = '✨ Interpretando...';
         mostrarEstadoAsistenteIA('La IA está interpretando y redactando el diagnóstico...');
 
-        const systemPrompt = 'Eres un asistente para una terapeuta holística (Reiki y sanación energética) que ayuda a redactar el campo "Temas Tratados / Diagnóstico Energético" de una ficha de sesión, a partir de notas dictadas por voz (a menudo desordenadas o con errores de transcripción). Interpretá la nota y devolvé un texto breve, claro y profesional en español rioplatense, de 2 a 4 frases, conservando todos los datos relevantes mencionados (chakras, bloqueos, técnicas usadas, sensaciones del consultante, evolución). No inventes información que no esté en la nota. Respondé ÚNICAMENTE con el texto final del diagnóstico, sin comillas, sin encabezados y sin explicaciones adicionales.';
+        const systemPrompt = 'Redactás el diagnóstico energético de una sesión de Reiki/terapia holística a partir de notas dictadas (pueden tener errores de transcripción). Devolvé 2 a 4 frases en español rioplatense, profesional y claro, conservando chakras, bloqueos, técnicas y sensaciones mencionadas. No inventes datos. Respondé solo con el texto final, sin comillas ni encabezados.';
 
         async function llamarGemini(modelo) {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${encodeURIComponent(apiKey)}`;
@@ -2035,7 +2035,7 @@
                     contents: [{ role: 'user', parts: [{ text: notasCrudas }] }],
                     generationConfig: {
                         temperature: 0.4,
-                        maxOutputTokens: 1024,
+                        maxOutputTokens: 300,
                         thinkingConfig: { thinkingBudget: 0 }
                     }
                 })
